@@ -1,6 +1,6 @@
 use crate::chars::CharConsumeError;
 use crate::standard::{Digit, Sign};
-use crate::{Consumable, OneOrMore};
+use crate::OneOrMore;
 
 #[derive(Debug, PartialEq)]
 pub enum IntegerConsumeError {

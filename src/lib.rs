@@ -16,65 +16,42 @@ pub trait Consumable: Sized {
             Err(_) => (None, s),
         }
     }
-}
+    fn consume_till_error_from(s: &str) -> (Vec<Self>, &str) {
+        <Vec<Self>>::consume_from(s).unwrap_or((Vec::new(), s))
+    }
+    fn consume_till_end_from(s: &str) -> Result<Vec<Self>, Either<Self::ConsumeError, &str>> {
+        let (vs, unconsumed) = <Vec<Self>>::consume_from(s).map_err(|err| Left(err))?;
 
-pub trait ASCIIConsumable: Sized {
-    type ASCIIConsumeError;
-
-    fn ascii_consume_from(s: &str) -> Result<(Self, &str), Self::ASCIIConsumeError>;
-    fn try_ascii_consume_from(s: &str) -> (Option<Self>, &str) {
-        let result = Self::ascii_consume_from(s);
-
-        match result {
-            Ok((item, unconsumed)) => (Some(item), unconsumed),
-            Err(_) => (None, s),
+        if unconsumed.is_empty() {
+            Ok(vs)
+        } else {
+            Err(Right(unconsumed))
         }
     }
 }
 
-impl<T: Consumable> Consumable for Option<T> {
-    type ConsumeError = T::ConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-        Ok(T::try_consume_from(s))
-    }
-}
-
-impl<T: Consumable> Consumable for Vec<T> {
-    type ConsumeError = T::ConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-        let mut sequence = Vec::new();
-        let mut last_unconsumed = s;
-
-        while let Ok((extra_coordinate_pair, unconsumed)) = T::consume_from(last_unconsumed) {
-            sequence.push(extra_coordinate_pair);
-            last_unconsumed = unconsumed;
-        }
-
-        Ok((sequence, last_unconsumed))
-    }
-}
-
-impl<T, J> Consumable for (T, J)
+pub struct ConsumeIter<'a, T>
 where
     T: Consumable,
-    J: Consumable,
 {
-    type ConsumeError = Either<T::ConsumeError, J::ConsumeError>;
+    phantom: std::marker::PhantomData<T>,
+    unconsumed: &'a str,
+}
 
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-        let (t_item, unconsumed) = T::consume_from(s).map_err(|err| Left(err))?;
-        let (j_item, unconsumed) = J::consume_from(unconsumed).map_err(|err| Right(err))?;
-
-        Ok(((t_item, j_item), unconsumed))
+impl<'a, T> Iterator for ConsumeIter<'a, T>
+where
+    T: Consumable,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        <T>::try_consume_from(self.unconsumed).0
     }
 }
 
-pub mod bytes;
 pub mod chars;
 mod either;
 pub mod floats;
+mod impls;
 pub mod integers;
 pub mod standard;
 pub mod util;
