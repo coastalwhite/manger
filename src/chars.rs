@@ -33,7 +33,7 @@ macro_rules! char_impl {
         impl $crate::Consumable for $typename {
             type ConsumeError = CharConsumeError;
 
-            fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+            fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
                 match s.chars().next() {
                     Some(c) => {
                         if (c == $char) {

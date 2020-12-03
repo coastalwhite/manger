@@ -8,7 +8,7 @@ where
 {
     type ConsumeError = (L::ConsumeError, R::ConsumeError);
 
-    fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
         let left = <L>::from_consume(s);
 
         match left {
