@@ -4,7 +4,7 @@ pub type OneOrMore<T> = (T, Vec<T>);
 pub type MultipleWithDelimiter<T, D> = (Vec<(T, D)>, T);
 
 /// Trait used to do efficient parsing.
-pub trait ConsumeParsable: Sized {
+pub trait Consumable: Sized {
     type ConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError>;
@@ -18,7 +18,29 @@ pub trait ConsumeParsable: Sized {
     }
 }
 
-impl<T: ConsumeParsable> ConsumeParsable for Option<T> {
+pub trait ASCIIConsumable: Sized {
+    type ASCIIConsumeError;
+
+    fn ascii_consume_from(s: &str) -> Result<(Self, &str), Self::ASCIIConsumeError>;
+    fn try_ascii_consume_from(s: &str) -> Result<(Self, &str), Self::ASCIIConsumeError> {
+        let result = Self::ascii_consume_from(s);
+
+        match result {
+            Ok((item, unconsumed)) => (Some(item), unconsumed),
+            Err(_) => (None, s),
+        }
+    }
+}
+
+impl<T: ASCIIConsumable> Consumable for T {
+    type ConsumeError = Self::ASCIIConsumeError;
+
+    fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+        Self::ascii_consume_from(s)
+    }
+}
+
+impl<T: Consumable> Consumable for Option<T> {
     type ConsumeError = T::ConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
@@ -26,7 +48,7 @@ impl<T: ConsumeParsable> ConsumeParsable for Option<T> {
     }
 }
 
-impl<T: ConsumeParsable> ConsumeParsable for Vec<T> {
+impl<T: Consumable> Consumable for Vec<T> {
     type ConsumeError = T::ConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
@@ -42,10 +64,10 @@ impl<T: ConsumeParsable> ConsumeParsable for Vec<T> {
     }
 }
 
-impl<T, J> ConsumeParsable for (T, J)
+impl<T, J> Consumable for (T, J)
 where
-    T: ConsumeParsable,
-    J: ConsumeParsable,
+    T: Consumable,
+    J: Consumable,
 {
     type ConsumeError = Either<T::ConsumeError, J::ConsumeError>;
 
