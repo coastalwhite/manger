@@ -30,7 +30,7 @@ impl From<Either<CharConsumeError, CharConsumeError>> for CharConsumeError {
 
 macro_rules! char_impl {
     ( $typename:ident => $char:literal ) => {
-        impl crate::ConsumeParsable for $typename {
+        impl $crate::Consumable for $typename {
             type ConsumeError = CharConsumeError;
 
             fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {

@@ -30,10 +30,10 @@ impl From<Either<ByteConsumeError, ByteConsumeError>> for ByteConsumeError {
 
 macro_rules! byte_impl {
     ( $typename:ident => $byte:literal ) => {
-        impl crate::ConsumeParsable for $typename {
-            type ConsumeError = ByteConsumeError;
+        impl crate::ASCIIConsumable for $typename {
+            type ASCIIConsumeError = ByteConsumeError;
 
-            fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+            fn ascii_consume_from(s: &str) -> Result<(Self, &str), Self::ASCIIConsumeError> {
                 match s.bytes().next() {
                     Some(c) => {
                         if (c == $byte) {

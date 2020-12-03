@@ -1,6 +1,6 @@
 use crate::chars::{self, CharConsumeError};
 use crate::standard::{Digit, Sign};
-use crate::{ConsumeParsable, OneOrMore};
+use crate::{Consumable, OneOrMore};
 use std::num::ParseFloatError;
 use std::str::FromStr;
 
@@ -21,24 +21,24 @@ impl Into<FloatConsumeError> for CharConsumeError {
     }
 }
 
-impl ConsumeParsable for f32 {
+impl Consumable for f32 {
     type ConsumeError = FloatConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-        let (Sign(_is_positive), unconsumed) = Sign::consume(s).map_err(|err| err.into())?;
+        let (Sign(_is_positive), unconsumed) = Sign::from_consume(s).map_err(|err| err.into())?;
         let (integer, unconsumed) =
-            <Vec<Digit>>::consume(unconsumed).map_err(|either_err| either_err.into())?;
+            <Vec<Digit>>::from_consume(unconsumed).map_err(|either_err| either_err.into())?;
 
         let unconsumed = if integer.is_empty() {
             let (_, unconsumed) = chars::Period::consume(unconsumed).map_err(|err| err.into())?;
             let (_fraction, unconsumed) =
-                <Vec<Digit>>::consume(unconsumed).map_err(|err| err.into())?;
+                <Vec<Digit>>::from_consume(unconsumed).map_err(|err| err.into())?;
 
             unconsumed
         } else {
             if let (Some(_), unconsumed) = chars::Period::try_consume(unconsumed) {
                 let (_fraction, unconsumed) =
-                    <Vec<Digit>>::consume(unconsumed).map_err(|err| err.into())?;
+                    <Vec<Digit>>::from_consume(unconsumed).map_err(|err| err.into())?;
 
                 unconsumed
             } else {
@@ -61,10 +61,10 @@ impl ConsumeParsable for f32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::ConsumeParsable;
+    use crate::Consumable;
 
     #[test]
     fn test_f32_parsing() {
-        assert_eq!(f32::consume("1.2e12").unwrap().0, 1.2e12f32);
+        assert_eq!(f32::from_consume("1.2e12").unwrap().0, 1.2e12f32);
     }
 }

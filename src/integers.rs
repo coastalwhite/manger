@@ -1,6 +1,6 @@
 use crate::chars::CharConsumeError;
 use crate::standard::{Digit, Sign};
-use crate::{ConsumeParsable, OneOrMore};
+use crate::{Consumable, OneOrMore};
 
 #[derive(Debug, PartialEq)]
 pub enum IntegerConsumeError {
@@ -111,7 +111,7 @@ impl_consume_int!(i128);
 #[cfg(test)]
 mod tests {
     use super::IntegerConsumeError::*;
-    use crate::ConsumeParsable;
+    use crate::Consumable;
 
     #[test]
     fn test_u8_consume_parse() {

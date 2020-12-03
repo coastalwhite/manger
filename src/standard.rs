@@ -1,12 +1,12 @@
 use crate::chars;
 use crate::chars::CharConsumeError;
-use crate::ConsumeParsable;
+use crate::Consumable;
 use either::Either;
 
 #[derive(Debug, PartialEq)]
 pub struct Sign(pub bool);
 
-impl ConsumeParsable for Sign {
+impl Consumable for Sign {
     type ConsumeError = CharConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
@@ -18,7 +18,7 @@ impl ConsumeParsable for Sign {
 #[derive(Debug, PartialEq)]
 pub struct Empty;
 
-impl ConsumeParsable for Empty {
+impl Consumable for Empty {
     type ConsumeError = ();
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
@@ -29,7 +29,7 @@ impl ConsumeParsable for Empty {
 #[derive(Debug, PartialEq)]
 pub struct Digit(pub u8);
 
-impl ConsumeParsable for Digit {
+impl Consumable for Digit {
     type ConsumeError = CharConsumeError;
 
     fn consume(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
