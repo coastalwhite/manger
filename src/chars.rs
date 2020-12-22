@@ -3,7 +3,7 @@ use either::Either;
 #[derive(Debug, PartialEq)]
 pub enum CharConsumeError {
     EmptyString,
-    InvalidToken(usize, char),
+    InvalidToken(char),
 }
 
 impl From<(CharConsumeError, CharConsumeError)> for CharConsumeError {
@@ -12,7 +12,7 @@ impl From<(CharConsumeError, CharConsumeError)> for CharConsumeError {
 
         match err {
             (EmptyString, _) => EmptyString,
-            (InvalidToken(l, c), _) => InvalidToken(l, c),
+            (InvalidToken(c), _) => InvalidToken(c),
         }
     }
 }
@@ -39,7 +39,7 @@ macro_rules! char_impl {
                         if (c == $char) {
                             Ok(($typename, utf8_slice::from(s, 1)))
                         } else {
-                            Err(CharConsumeError::InvalidToken(0, c))
+                            Err(CharConsumeError::InvalidToken(c))
                         }
                     }
                     _ => Err(CharConsumeError::EmptyString),

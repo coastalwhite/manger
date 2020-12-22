@@ -5,7 +5,7 @@ use crate::OneOrMore;
 #[derive(Debug, PartialEq)]
 pub enum IntegerConsumeError {
     Overflow,
-    InvalidToken(usize, char),
+    InvalidToken(char),
     EmptyString,
 }
 
@@ -13,7 +13,7 @@ impl Into<IntegerConsumeError> for CharConsumeError {
     fn into(self) -> IntegerConsumeError {
         match self {
             CharConsumeError::EmptyString => IntegerConsumeError::EmptyString,
-            CharConsumeError::InvalidToken(i, c) => IntegerConsumeError::InvalidToken(i, c),
+            CharConsumeError::InvalidToken(c) => IntegerConsumeError::InvalidToken(c),
         }
     }
 }
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn test_u8_consume_parse_errors() {
         assert_eq!(u8::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u8::consume_from("-123").unwrap_err(), InvalidToken(0, '-'));
+        assert_eq!(u8::consume_from("-123").unwrap_err(), InvalidToken('-'));
         assert_eq!(u8::consume_from("256").unwrap_err(), Overflow);
     }
 
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn test_u16_consume_parse_errors() {
         assert_eq!(u16::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u16::consume_from("-123").unwrap_err(), InvalidToken(0, '-'));
+        assert_eq!(u16::consume_from("-123").unwrap_err(), InvalidToken('-'));
         assert_eq!(u16::consume_from("65536").unwrap_err(), Overflow);
     }
 
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_u32_consume_parse_errors() {
         assert_eq!(u32::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u32::consume_from("-123").unwrap_err(), InvalidToken(0, '-'));
+        assert_eq!(u32::consume_from("-123").unwrap_err(), InvalidToken('-'));
         assert_eq!(u32::consume_from("4294967296").unwrap_err(), Overflow);
     }
 
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn test_u64_consume_parse_errors() {
         assert_eq!(u64::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u64::consume_from("-123").unwrap_err(), InvalidToken(0, '-'));
+        assert_eq!(u64::consume_from("-123").unwrap_err(), InvalidToken('-'));
         assert_eq!(
             u64::consume_from("18446744073709551616").unwrap_err(),
             Overflow
@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn test_i8_consume_parse_errors() {
         assert_eq!(i8::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i8::consume_from("a123").unwrap_err(), InvalidToken(0, 'a'));
+        assert_eq!(i8::consume_from("a123").unwrap_err(), InvalidToken('a'));
         assert_eq!(i8::consume_from("128").unwrap_err(), Overflow);
         assert_eq!(i8::consume_from("-129").unwrap_err(), Overflow);
     }
@@ -217,7 +217,7 @@ mod tests {
     #[test]
     fn test_i16_consume_parse_errors() {
         assert_eq!(i16::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i16::consume_from("a123").unwrap_err(), InvalidToken(0, 'a'));
+        assert_eq!(i16::consume_from("a123").unwrap_err(), InvalidToken('a'));
         assert_eq!(i16::consume_from("32768").unwrap_err(), Overflow);
         assert_eq!(i16::consume_from("-32769").unwrap_err(), Overflow);
     }
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn test_i32_consume_parse_errors() {
         assert_eq!(i32::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i32::consume_from("a123").unwrap_err(), InvalidToken(0, 'a'));
+        assert_eq!(i32::consume_from("a123").unwrap_err(), InvalidToken('a'));
         assert_eq!(i32::consume_from("2147483648").unwrap_err(), Overflow);
         assert_eq!(i32::consume_from("-2147483649").unwrap_err(), Overflow);
     }
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test_i64_consume_parse_errors() {
         assert_eq!(i64::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i64::consume_from("a123").unwrap_err(), InvalidToken(0, 'a'));
+        assert_eq!(i64::consume_from("a123").unwrap_err(), InvalidToken('a'));
         assert_eq!(
             i64::consume_from("9223372036854775808").unwrap_err(),
             Overflow
@@ -292,10 +292,7 @@ mod tests {
     #[test]
     fn test_i128_consume_parse_errors() {
         assert_eq!(i128::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(
-            i128::consume_from("a123").unwrap_err(),
-            InvalidToken(0, 'a')
-        );
+        assert_eq!(i128::consume_from("a123").unwrap_err(), InvalidToken('a'));
         assert_eq!(
             i128::consume_from("170141183460469231731687303715884105728").unwrap_err(),
             Overflow

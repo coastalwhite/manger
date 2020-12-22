@@ -35,7 +35,7 @@ impl Consumable for Digit {
     fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
         if let Some(c) = s.chars().next() {
             Ok((
-                Digit(c.to_digit(10).ok_or(CharConsumeError::InvalidToken(0, c))? as u8),
+                Digit(c.to_digit(10).ok_or(CharConsumeError::InvalidToken(c))? as u8),
                 utf8_slice::from(s, 1),
             ))
         } else {

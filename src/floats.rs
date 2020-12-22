@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 pub enum FloatConsumeError {
     Overflow,
-    InvalidToken(usize, char),
+    InvalidToken(char),
     Float(ParseFloatError),
     EmptyString,
 }
@@ -16,7 +16,7 @@ impl Into<FloatConsumeError> for CharConsumeError {
     fn into(self) -> FloatConsumeError {
         match self {
             CharConsumeError::EmptyString => FloatConsumeError::EmptyString,
-            CharConsumeError::InvalidToken(i, c) => FloatConsumeError::InvalidToken(i, c),
+            CharConsumeError::InvalidToken(c) => FloatConsumeError::InvalidToken(c),
         }
     }
 }
