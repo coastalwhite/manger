@@ -1,7 +1,9 @@
+pub mod floats;
 pub mod integers;
 pub mod strs;
 pub mod tokens;
 
+pub use floats::FloatConsumeError;
 pub use integers::IntegerConsumeError;
 pub use strs::StringConsumeError;
 pub use tokens::TokenConsumeError;
@@ -91,6 +93,7 @@ pub trait OrMergableConsumeError: Sized {
 impl OrMergableConsumeError for TokenConsumeError {}
 impl OrMergableConsumeError for StringConsumeError {}
 impl OrMergableConsumeError for IntegerConsumeError {}
+impl OrMergableConsumeError for FloatConsumeError {}
 
 pub trait OffsettedFrom<F: CausableConsumeError> {
     fn offsetted_from(from: F, offset: usize) -> Self;
