@@ -1,22 +1,6 @@
-use crate::chars::CharConsumeError;
+use crate::errors::IntegerConsumeError;
 use crate::standard::{Digit, Sign};
 use crate::OneOrMore;
-
-#[derive(Debug, PartialEq)]
-pub enum IntegerConsumeError {
-    Overflow,
-    InvalidToken(char),
-    EmptyString,
-}
-
-impl Into<IntegerConsumeError> for CharConsumeError {
-    fn into(self) -> IntegerConsumeError {
-        match self {
-            CharConsumeError::EmptyString => IntegerConsumeError::EmptyString,
-            CharConsumeError::InvalidToken(c) => IntegerConsumeError::InvalidToken(c),
-        }
-    }
-}
 
 macro_rules! impl_consume_uint {
     ( $type: ty ) => {
@@ -24,14 +8,13 @@ macro_rules! impl_consume_uint {
             type ConsumeError = IntegerConsumeError;
 
             fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-                let ((Digit(head), tail), unconsumed) = OneOrMore::<Digit>::consume_from(s)
-                    .map_err(|either_err| {
-                        match either_err {
-                            either::Left(e) => e,
-                            either::Right(e) => e,
-                        }
-                        .into()
-                    })?;
+                let (
+                    OneOrMore {
+                        head: Digit(head),
+                        tail,
+                    },
+                    unconsumed,
+                ) = OneOrMore::<Digit>::consume_from(s)?;
 
                 let mut num = <$type>::from(head);
 
@@ -60,14 +43,13 @@ macro_rules! impl_consume_int {
             fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
                 let (Sign(is_positive), unconsumed) = Sign::consume_from(s).unwrap();
 
-                let ((Digit(head), tail), unconsumed) =
-                    OneOrMore::<Digit>::consume_from(unconsumed).map_err(|either_err| {
-                        match either_err {
-                            either::Left(e) => e,
-                            either::Right(e) => e,
-                        }
-                        .into()
-                    })?;
+                let (
+                    OneOrMore {
+                        head: Digit(head),
+                        tail,
+                    },
+                    unconsumed,
+                ) = OneOrMore::<Digit>::consume_from(unconsumed)?;
 
                 let mut num = head as $type;
                 if !is_positive {
@@ -110,7 +92,7 @@ impl_consume_int!(i128);
 
 #[cfg(test)]
 mod tests {
-    use super::IntegerConsumeError::*;
+    use crate::errors::IntegerConsumeError::*;
     use crate::Consumable;
 
     #[test]
@@ -122,8 +104,14 @@ mod tests {
 
     #[test]
     fn test_u8_consume_parse_errors() {
-        assert_eq!(u8::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u8::consume_from("-123").unwrap_err(), InvalidToken('-'));
+        assert_eq!(u8::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            u8::consume_from("-123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: '-'
+            }
+        );
         assert_eq!(u8::consume_from("256").unwrap_err(), Overflow);
     }
 
@@ -140,8 +128,14 @@ mod tests {
 
     #[test]
     fn test_u16_consume_parse_errors() {
-        assert_eq!(u16::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u16::consume_from("-123").unwrap_err(), InvalidToken('-'));
+        assert_eq!(u16::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            u16::consume_from("-123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: '-'
+            }
+        );
         assert_eq!(u16::consume_from("65536").unwrap_err(), Overflow);
     }
 
@@ -158,8 +152,14 @@ mod tests {
 
     #[test]
     fn test_u32_consume_parse_errors() {
-        assert_eq!(u32::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u32::consume_from("-123").unwrap_err(), InvalidToken('-'));
+        assert_eq!(u32::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            u32::consume_from("-123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: '-'
+            }
+        );
         assert_eq!(u32::consume_from("4294967296").unwrap_err(), Overflow);
     }
 
@@ -176,8 +176,14 @@ mod tests {
 
     #[test]
     fn test_u64_consume_parse_errors() {
-        assert_eq!(u64::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(u64::consume_from("-123").unwrap_err(), InvalidToken('-'));
+        assert_eq!(u64::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            u64::consume_from("-123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: '-'
+            }
+        );
         assert_eq!(
             u64::consume_from("18446744073709551616").unwrap_err(),
             Overflow
@@ -193,8 +199,14 @@ mod tests {
 
     #[test]
     fn test_i8_consume_parse_errors() {
-        assert_eq!(i8::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i8::consume_from("a123").unwrap_err(), InvalidToken('a'));
+        assert_eq!(i8::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            i8::consume_from("a123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: 'a'
+            }
+        );
         assert_eq!(i8::consume_from("128").unwrap_err(), Overflow);
         assert_eq!(i8::consume_from("-129").unwrap_err(), Overflow);
     }
@@ -216,8 +228,14 @@ mod tests {
 
     #[test]
     fn test_i16_consume_parse_errors() {
-        assert_eq!(i16::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i16::consume_from("a123").unwrap_err(), InvalidToken('a'));
+        assert_eq!(i16::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            i16::consume_from("a123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: 'a'
+            }
+        );
         assert_eq!(i16::consume_from("32768").unwrap_err(), Overflow);
         assert_eq!(i16::consume_from("-32769").unwrap_err(), Overflow);
     }
@@ -239,8 +257,14 @@ mod tests {
 
     #[test]
     fn test_i32_consume_parse_errors() {
-        assert_eq!(i32::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i32::consume_from("a123").unwrap_err(), InvalidToken('a'));
+        assert_eq!(i32::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            i32::consume_from("a123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: 'a'
+            }
+        );
         assert_eq!(i32::consume_from("2147483648").unwrap_err(), Overflow);
         assert_eq!(i32::consume_from("-2147483649").unwrap_err(), Overflow);
     }
@@ -262,8 +286,14 @@ mod tests {
 
     #[test]
     fn test_i64_consume_parse_errors() {
-        assert_eq!(i64::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i64::consume_from("a123").unwrap_err(), InvalidToken('a'));
+        assert_eq!(i64::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            i64::consume_from("a123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: 'a'
+            }
+        );
         assert_eq!(
             i64::consume_from("9223372036854775808").unwrap_err(),
             Overflow
@@ -291,8 +321,14 @@ mod tests {
 
     #[test]
     fn test_i128_consume_parse_errors() {
-        assert_eq!(i128::consume_from("").unwrap_err(), EmptyString);
-        assert_eq!(i128::consume_from("a123").unwrap_err(), InvalidToken('a'));
+        assert_eq!(i128::consume_from("").unwrap_err(), InsufficientTokens);
+        assert_eq!(
+            i128::consume_from("a123").unwrap_err(),
+            UnexpectedToken {
+                index: 0,
+                token: 'a'
+            }
+        );
         assert_eq!(
             i128::consume_from("170141183460469231731687303715884105728").unwrap_err(),
             Overflow
