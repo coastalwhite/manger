@@ -207,3 +207,13 @@ pub mod alphabet {
         ];
     }
 }
+
+#[macro_use]
+use crate::consume_syntax;
+pub struct Whitespace;
+
+consume_syntax!(
+    Whitespace => [
+        > char { |token: char| token.is_whitespace() }
+    ]
+);

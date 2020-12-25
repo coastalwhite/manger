@@ -73,13 +73,29 @@ pub trait Consumable: Sized {
     }
 }
 
-pub trait SelfConsumable: Sized {
+pub trait SelfConsumable {
     type ConsumeError;
 
     fn consume_item<'a, 'b>(
         item: &'a Self,
         s: &'b str,
     ) -> Result<(&'a Self, &'b str), Self::ConsumeError>;
+}
+
+pub trait ConsumeSource: Sized {
+    fn consume<'a, 'b, T: SelfConsumable>(
+        self: Self,
+        item: &'b T,
+    ) -> Result<(&'b T, Self), T::ConsumeError>;
+}
+
+impl<'a> ConsumeSource for &'a str {
+    fn consume<'b, T: SelfConsumable>(
+        self: Self,
+        item: &'b T,
+    ) -> Result<(&'b T, Self), T::ConsumeError> {
+        <T>::consume_item(item, self)
+    }
 }
 
 pub struct ConsumeIter<'a, T>
@@ -106,6 +122,7 @@ pub mod errors;
 pub mod floats;
 mod impls;
 pub mod integers;
+pub mod macros;
 pub mod standard;
 mod strs;
 pub mod util;
