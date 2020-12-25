@@ -1,13 +1,24 @@
-//! *Manger*
-//! _A performant, low-level, lightweight and intuitive parsing library_
+//! # Manger
 //!
+//! ## A performant, low-level, lightweight and intuitive parsing library
+//!
+//! ## Why use Manger
+//!
+//! Manger is really easy to use, easy to understand and really performant.
+//! It is inspired by combinatoric parsers.
+//! Manger has a optimatized standard library including parsing for integers,
+//! floating-point and UTF-8.
+
 use ::either::{Either, Either::Left, Either::Right};
 use errors::CausableConsumeError;
 
-/// Parse one or more of type _T_
+/// Consume one or more of type _T_.
+/// This is equalent of the `+` operator in EBNF syntax or within RegEx.
 pub struct OneOrMore<T: Consumable> {
-    head: T,
-    tail: Vec<T>,
+    /// The element that is guarenteed to be consumed
+    pub head: T,
+    /// Other items had are possibly parsed
+    pub tail: Vec<T>,
 }
 
 impl<T: Consumable> Consumable for OneOrMore<T> {
@@ -20,7 +31,7 @@ impl<T: Consumable> Consumable for OneOrMore<T> {
         Ok((OneOrMore { head, tail }, unconsumed))
     }
 }
-/// Parse one or more with a delimiter between elements
+/// Consume one or more with a delimiter between elements
 pub type MultipleWithDelimiter<T, D> = (Vec<(T, D)>, T);
 
 /// Trait used to do efficient parsing.
