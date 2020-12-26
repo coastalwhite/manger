@@ -9,17 +9,128 @@
 //! Manger has a optimatized standard library including parsing for integers,
 //! floating-point and UTF-8.
 
+use error::ConsumeError;
+
 /// Consume one or more of type _T_.
 /// This is equalent of the `+` operator in EBNF syntax or within RegEx.
+///
+///
 #[derive(Debug)]
 pub struct OneOrMore<T: Consumable> {
     /// The element that is guarenteed to be consumed
-    pub head: T,
+    head: T,
     /// Other items had are possibly parsed
-    pub tail: Vec<T>,
+    tail: Vec<T>,
 }
 
-use error::ConsumeError;
+impl<T: Consumable> OneOrMore<T> {
+    /// Getter for the first item of the `OneOrMore<T>`. Because there were one or more
+    /// consumed, this will always contain an item.
+    pub fn head(&self) -> &T {
+        &self.head
+    }
+
+    /// Getter for the rest of the element in the `OneOrMore<T>`. This is not guarenteed
+    /// to contain elements.
+    pub fn tail(&self) -> &Vec<T> {
+        &self.tail
+    }
+
+    /// Take ownership `self` of type `OneOrMore<T>` and return a `Vec<T>` owning all
+    /// the items `self` used to contain.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::{OneOrMore, Consumable};
+    ///
+    /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
+    ///
+    /// let uppercased: String = items
+    ///     .into_vec()
+    ///     .into_iter()
+    ///     .filter(|character| character.is_ascii_uppercase())
+    ///     .collect();
+    ///
+    /// assert_eq!(uppercased, "BEF");
+    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// ```
+    pub fn into_vec(self) -> Vec<T> {
+        let mut vec = Vec::with_capacity(self.tail().len() + 1);
+
+        vec.push(self.head);
+        self.tail.into_iter().for_each(|item| vec.push(item));
+
+        vec
+    }
+
+    /// Returns a vector with references to the items in the `OneOrMore<T>`.
+    /// This will not take ownership of the the items in `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::{OneOrMore, Consumable};
+    ///
+    /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
+    ///
+    /// let uppercased: String = items
+    ///     .ref_vec()
+    ///     .into_iter()
+    ///     .filter(|character| character.is_ascii_uppercase())
+    ///     .collect();
+    ///
+    /// assert_eq!(uppercased, "BEF");
+    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// ```
+    pub fn ref_vec(&self) -> Vec<&T> {
+        let mut vec = Vec::with_capacity(self.tail().len() + 1);
+
+        vec.push(&self.head);
+        self.tail.iter().for_each(|item| vec.push(&item));
+
+        vec
+    }
+
+    /// Returns a vector with mutable references to the items in the `OneOrMore<T>`.
+    /// This will not take ownership of the the items in `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::{OneOrMore, Consumable};
+    ///
+    /// let (mut items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
+    ///
+    /// items
+    ///     .mut_vec()
+    ///     .iter_mut()
+    ///     .filter(|character| character.is_ascii_uppercase())
+    ///     .for_each(|character| **character = character.to_ascii_lowercase());
+    ///
+    /// let lowercased: String = items.into_iter().collect();
+    ///
+    /// assert_eq!(lowercased, "abcdefg");
+    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// ```
+    pub fn mut_vec(&mut self) -> Vec<&mut T> {
+        let mut vec = Vec::with_capacity(self.tail().len() + 1);
+
+        vec.push(&mut self.head);
+        self.tail.iter_mut().for_each(|item| vec.push(item));
+
+        vec
+    }
+}
+
+impl<T: Consumable> IntoIterator for OneOrMore<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_vec().into_iter()
+    }
+}
 
 impl<T: Consumable> Consumable for OneOrMore<T> {
     fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
