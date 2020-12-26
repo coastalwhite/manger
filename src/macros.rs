@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! consume_syntax_enum {
+macro_rules! consume_syntax {
     ( @args $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
         $enum_name::$ident ( $( $prop ),* )
     };
@@ -25,25 +25,30 @@ macro_rules! consume_syntax_enum {
         }
     ) => {
         impl $crate::Consumable for $enum_name {
-            type ConsumeError = ();
-
             #[allow(unconditional_recursion)]
-            fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+            fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
+                let mut error = $crate::error::ConsumeError::new();
+
                 $(
                     loop {
                         #[allow(unused_imports)]
                         use $crate::ConsumeSource;
 
-                        let unconsumed = s;
+                        let mut unconsumed = source;
+                        let mut offset = 0;
+
                         $(
                             $(
-                                let ($prop_name, unconsumed) = {
-                                    let result = <$prop_type>::consume_from(unconsumed);
-                                    if result.is_err() {
-                                        break;
-                                    }
-
-                                    result.unwrap()
+                                #[allow(unused_assignments)]
+                                let $prop_name = match unconsumed.mut_consume_by::<$prop_type>() {
+                                        Err(err) => {
+                                            error.add_causes(err.offset(offset));
+                                            break;
+                                        },
+                                        Ok((prop, by)) => {
+                                            offset += by;
+                                            prop
+                                        }
                                 };
 
                                 $(
@@ -52,43 +57,37 @@ macro_rules! consume_syntax_enum {
                             )?
 
                             $(
-                                let (_, unconsumed) = {
-                                    let result = <$cons_type>::consume_from(unconsumed)
-                                    $(
-                                        .and_then(
-                                            |(item, unconsumed)| {
-                                                if ($cons_condition)(item) {
-                                                    Ok((item, unconsumed))
-                                                } else {
-                                                    Err(())
-                                                }
+                                if let Err(err) = unconsumed.mut_consume_by::<$cons_type>()
+                                    .map( |(item, by)| { offset += by; item })
+                                $(
+                                    .and_then(
+                                        |(item, unconsumed)| {
+                                            if ($cons_condition)(item) {
+                                                Ok((item, unconsumed))
+                                            } else {
+                                                Err($crate::error::ConsumeErrorType::InvalidValue { index: offset })
                                             }
-                                        )
-                                    )?;
-
-                                    if result.is_err() {
-                                        break;
-                                    }
-
-                                    result.unwrap()
-                                };
+                                        }
+                                    )
+                                )? {
+                                    error.add_causes(err.offset(offset));
+                                    break;
+                                }
                             )?
 
                             $(
-                                let (_, unconsumed) = {
-                                    let result = <&str>::consume(&unconsumed, &$cons_expr);
-                                    if result.is_err() {
-                                        break;
-                                    }
-
-                                    result.unwrap()
-                                };
+                                if let Err(err) = unconsumed.mut_consume_lit(&$cons_expr)
+                                    .map( |by| offset += by )
+                                {
+                                    error.add_causes(err.offset(offset));
+                                    break;
+                                }
                             )?
                         )+
 
                         return Ok(
                             (
-                                 consume_syntax_enum!(
+                                 consume_syntax!(
                                     @args
                                     $enum_name,
                                     $ident,
@@ -103,7 +102,86 @@ macro_rules! consume_syntax_enum {
                     }
                 )+
 
-                Err(())
+                Err(error)
+            }
+        }
+    };
+    ( @args $struct_name:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+        $struct_name ( $( $prop ),* )
+    };
+    ( @args $struct_name:ident, $( $prop_name:ident ),* ) => {
+        $struct_name { $( $prop_name ),* }
+    };
+
+    (
+        $struct_name:ident => [
+            $(
+                $( $prop_name:ident: $prop_type:ty $( { $prop_transform:expr } )? )?
+                $( : $cons_type:ty $( { $cons_condition:expr } )?)?
+                $( > $cons_expr:expr )?
+            ),*
+            ;
+            $( ( $( $prop:ident ),* ) )?
+        ] ) => {
+        impl $crate::Consumable for $struct_name {
+            fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
+                #[allow(unused_imports)]
+                use $crate::ConsumeSource;
+
+                let mut unconsumed = source;
+                let mut offset = 0;
+
+                $(
+                    $(
+                        let $prop_name = unconsumed.mut_consume_by::<$prop_type>()
+                            .map(|(prop, by)| {
+                                offset += by;
+                                prop
+                            })
+                            .map_err( |err| err.offset(offset) )?;
+
+                        $(
+                            let $prop_name = ($prop_transform)($prop_name);
+                        )?
+                    )?
+
+                    $(
+                        unconsumed.mut_consume_by::<$cons_type>()
+                        $(
+                            .and_then(
+                                |(item, by)| {
+                                    if ($cons_condition)(item) {
+                                        Ok((item, by))
+                                    } else {
+                                        Err(
+                                            $crate::error::ConsumeError::new_with(
+                                                $crate::error::ConsumeErrorType::InvalidValue { index: offset }
+                                            )
+                                        )
+                                    }
+                                }
+                            )
+                        )?
+                            .map( |(_, by)| offset += by )
+                            .map_err( |err| err.offset(offset) )?;
+                    )?
+                    $(
+                        unconsumed.consume_lit(&$cons_expr)
+                            .map(|by| offset += by)
+                            .map_err( |err| err.offset(offset) )?;
+                    )?
+                )+
+
+                Ok(
+                    (
+                        consume_syntax!(
+                            @args $struct_name,
+                            $( $( $prop_name, )* )?
+                            $( => ( $( $prop ),* ) )?
+                        ),
+                        unconsumed
+                    )
+                )
             }
         }
     };
@@ -112,6 +190,8 @@ macro_rules! consume_syntax_enum {
 #[cfg(test)]
 mod tests {
     mod fruits {
+        use crate::Consumable;
+
         #[derive(Debug, PartialEq)]
         enum AppleColor {
             Green,
@@ -133,7 +213,7 @@ mod tests {
             Orange(OrangeTaste),
         }
 
-        consume_syntax_enum!(
+        consume_syntax!(
             AppleColor {
                 Green => [
                     > "green";
@@ -147,7 +227,7 @@ mod tests {
             }
         );
 
-        consume_syntax_enum!(
+        consume_syntax!(
             OrangeTaste {
                 Sweet => [
                     > "sweet";
@@ -158,7 +238,7 @@ mod tests {
             }
         );
 
-        consume_syntax_enum!(
+        consume_syntax!(
             Fruit {
                 Apple => [
                     color: AppleColor,
@@ -183,8 +263,6 @@ mod tests {
 
         #[test]
         fn parse_apple_color() {
-            use crate::Consumable;
-
             assert_eq!(
                 AppleColor::consume_from("red").unwrap(),
                 (AppleColor::Red, "")
@@ -217,8 +295,6 @@ mod tests {
 
         #[test]
         fn parse_orange_taste() {
-            use crate::Consumable;
-
             assert_eq!(
                 OrangeTaste::consume_from("sweet").unwrap(),
                 (OrangeTaste::Sweet, "")
@@ -242,8 +318,6 @@ mod tests {
 
         #[test]
         fn parse_fruit() {
-            use crate::Consumable;
-
             assert_eq!(
                 Fruit::consume_from("red apple").unwrap(),
                 (Fruit::Apple(AppleColor::Red), "")
@@ -291,7 +365,7 @@ mod tests {
         use crate::chars::Whitespace;
         use crate::OneOrMore;
 
-        consume_syntax_enum!(
+        consume_syntax!(
             Expression {
                 Times => [
                     > '*',
@@ -313,10 +387,10 @@ mod tests {
             }
         );
 
+        use crate::Consumable;
+
         #[test]
         fn test_constant_parsing() {
-            use crate::Consumable;
-
             assert_eq!(
                 Expression::consume_from("123").unwrap(),
                 (Expression::Constant(123), "")
@@ -330,8 +404,6 @@ mod tests {
 
         #[test]
         fn test_times_parsing() {
-            use crate::Consumable;
-
             assert_eq!(
                 Expression::consume_from("* \n 123 321").unwrap(),
                 (
@@ -348,8 +420,6 @@ mod tests {
 
         #[test]
         fn test_plus_parsing() {
-            use crate::Consumable;
-
             assert_eq!(
                 Expression::consume_from("+ \n 123 321").unwrap(),
                 (
@@ -365,9 +435,28 @@ mod tests {
         }
 
         #[test]
-        fn test_combination_parsing() {
-            use crate::Consumable;
+        fn test_errors() {
+            use crate::error::ConsumeError;
+            use crate::error::ConsumeErrorType::*;
 
+            assert_eq!(
+                Expression::consume_from("*x"),
+                Err(ConsumeError::new_from(vec![
+                    InvalidValue { index: 1 },
+                    UnexpectedToken {
+                        index: 0,
+                        token: '*'
+                    },
+                    UnexpectedToken {
+                        index: 0,
+                        token: '*'
+                    }
+                ]))
+            );
+        }
+
+        #[test]
+        fn test_combination_parsing() {
             assert_eq!(
                 Expression::consume_from("+ *\n 123 321 456").unwrap(),
                 (

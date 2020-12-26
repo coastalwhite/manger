@@ -1,5 +1,5 @@
 use crate::chars;
-use crate::errors::TokenConsumeError;
+use crate::error::ConsumeError;
 use crate::Consumable;
 use either::Either;
 
@@ -7,9 +7,7 @@ use either::Either;
 pub struct Sign(pub bool);
 
 impl Consumable for Sign {
-    type ConsumeError = (TokenConsumeError, TokenConsumeError);
-
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
         let (item, unconsumed) = <Either<chars::Hyphen, Option<chars::Plus>>>::consume_from(s)?;
         Ok((Sign(item.is_right()), unconsumed))
     }
@@ -19,9 +17,7 @@ impl Consumable for Sign {
 pub struct Empty;
 
 impl Consumable for Empty {
-    type ConsumeError = ();
-
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
         Ok((Empty, s))
     }
 }
@@ -30,21 +26,21 @@ impl Consumable for Empty {
 pub struct Digit(pub u8);
 
 impl Consumable for Digit {
-    type ConsumeError = TokenConsumeError;
+    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
+        use crate::error::ConsumeErrorType::*;
 
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
         if let Some(token) = s.chars().next() {
             Ok((
                 Digit(
                     token
                         .to_digit(10)
-                        .ok_or(TokenConsumeError::UnexpectedToken { index: 0, token })?
+                        .ok_or(ConsumeError::new_with(UnexpectedToken { index: 0, token }))?
                         as u8,
                 ),
                 utf8_slice::from(s, 1),
             ))
         } else {
-            Err(TokenConsumeError::EmptyString)
+            Err(ConsumeError::new_with(InsufficientTokens { index: 0 }))
         }
     }
 }

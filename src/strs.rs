@@ -1,53 +1,24 @@
-use crate::errors::StringConsumeError;
+use crate::error::ConsumeError;
+use crate::error::ConsumeErrorType::*;
 use crate::SelfConsumable;
 
-impl SelfConsumable for str {
-    type ConsumeError = StringConsumeError;
-
-    fn consume_item<'a, 'b>(
-        item: &'a Self,
-        s: &'b str,
-    ) -> Result<(&'a Self, &'b str), StringConsumeError> {
-        let mut unconsumed = s;
-
-        for (index, token) in item.chars().enumerate() {
-            if let Some(next_char) = unconsumed.chars().next() {
-                if token != next_char {
-                    return Err(StringConsumeError::UnexpectedToken { index, token });
-                }
-            } else {
-                return Err(StringConsumeError::InsufficientTokens);
-            }
-
-            unconsumed = utf8_slice::from(unconsumed, 1);
-        }
-
-        Ok((item, unconsumed))
-    }
-}
-
 impl SelfConsumable for &str {
-    type ConsumeError = StringConsumeError;
-
-    fn consume_item<'a, 'b>(
-        item: &'a Self,
-        s: &'b str,
-    ) -> Result<(&'a Self, &'b str), StringConsumeError> {
-        let mut unconsumed = s;
+    fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError> {
+        let mut unconsumed = source;
 
         for (index, token) in item.chars().enumerate() {
             if let Some(next_char) = unconsumed.chars().next() {
                 if token != next_char {
-                    return Err(StringConsumeError::UnexpectedToken { index, token });
+                    return Err(ConsumeError::new_with(UnexpectedToken { index, token }));
                 }
             } else {
-                return Err(StringConsumeError::InsufficientTokens);
+                return Err(ConsumeError::new_with(InsufficientTokens { index }));
             }
 
             unconsumed = utf8_slice::from(unconsumed, 1);
         }
 
-        Ok((item, unconsumed))
+        Ok(unconsumed)
     }
 }
 
@@ -57,10 +28,6 @@ mod tests {
 
     #[test]
     fn test_strs_self_consume() {
-        let item = "ABC";
-        assert_eq!(<&str>::consume_item(&item, "ABCDEF"), Ok((&item, "DEF")));
-        assert_eq!(<&str>::consume_item(&item, "ABCDEF"), Ok((&item, "DEF")));
-        assert_eq!(<&str>::consume_item(&item, "ABCDEF"), Ok((&item, "DEF")));
-        assert_eq!(<&str>::consume_item(&item, "ABCDEF"), Ok((&item, "DEF")));
+        assert_eq!(<&str>::consume_item("ABCDEF", &"ABC"), Ok("DEF"));
     }
 }

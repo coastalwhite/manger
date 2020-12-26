@@ -1,33 +1,28 @@
-use crate::errors::TokenConsumeError;
+use crate::error::ConsumeError;
+use crate::error::ConsumeErrorType::*;
 use crate::{Consumable, SelfConsumable};
 
 impl SelfConsumable for char {
-    type ConsumeError = TokenConsumeError;
-
-    fn consume_item<'a, 'b>(
-        item: &'a Self,
-        s: &'b str,
-    ) -> Result<(&'a Self, &'b str), Self::ConsumeError> {
-        s.chars()
-            .next()
-            .map_or(Err(TokenConsumeError::EmptyString), |token| {
+    fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError> {
+        source.chars().next().map_or(
+            Err(ConsumeError::new_with(InsufficientTokens { index: 0 })),
+            |token| {
                 if token == *item {
-                    Ok((item, utf8_slice::from(s, 1)))
+                    Ok(utf8_slice::from(source, 1))
                 } else {
-                    Err(TokenConsumeError::UnexpectedToken { index: 0, token })
+                    Err(ConsumeError::new_with(UnexpectedToken { index: 0, token }))
                 }
-            })
+            },
+        )
     }
 }
 
 impl Consumable for char {
-    type ConsumeError = TokenConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
         if let Some(token) = s.chars().next() {
             Ok((token, utf8_slice::from(s, 1)))
         } else {
-            Err(TokenConsumeError::EmptyString)
+            Err(ConsumeError::new_with(InsufficientTokens { index: 0 }))
         }
     }
 }
@@ -35,18 +30,19 @@ impl Consumable for char {
 macro_rules! char_impl {
     ( $typename:ident => $char:literal ) => {
         impl $crate::Consumable for $typename {
-            type ConsumeError = TokenConsumeError;
+            fn consume_from(s: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
+                use $crate::error::ConsumeError;
+                use $crate::error::ConsumeErrorType::*;
 
-            fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
                 match s.chars().next() {
                     Some(token) => {
                         if (token == $char) {
                             Ok(($typename, utf8_slice::from(s, 1)))
                         } else {
-                            Err(TokenConsumeError::UnexpectedToken { index: 0, token })
+                            Err(ConsumeError::new_with(UnexpectedToken { index: 0, token }))
                         }
                     }
-                    _ => Err(TokenConsumeError::EmptyString),
+                    _ => Err(ConsumeError::new_with(InsufficientTokens { index: 0 })),
                 }
             }
         }
@@ -113,8 +109,6 @@ declare_chars![
 ];
 
 pub mod nums {
-    use super::TokenConsumeError;
-
     declare_chars![
     Zero => '0',
     One => '1',
@@ -130,7 +124,6 @@ pub mod nums {
 }
 
 pub mod alphabet {
-    use super::TokenConsumeError;
     use either::Either;
 
     macro_rules! letter_either {
@@ -142,8 +135,6 @@ pub mod alphabet {
     letter_either![A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z];
 
     pub mod upper {
-        use super::TokenConsumeError;
-
         declare_chars![
             A => 'A',
             B => 'B',
@@ -175,8 +166,6 @@ pub mod alphabet {
     }
 
     pub mod lower {
-        use super::TokenConsumeError;
-
         declare_chars![
             A => 'a',
             B => 'b',

@@ -1,26 +1,23 @@
+use crate::error::ConsumeError;
 use crate::Consumable;
-use either::{Either, Either::Left, Either::Right};
 
 impl<T: Consumable> Consumable for Option<T> {
-    type ConsumeError = T::ConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Option<T>, &str), Self::ConsumeError> {
-        Ok(T::try_consume_from(s))
+    fn consume_from(source: &str) -> Result<(Option<T>, &str), ConsumeError> {
+        Ok(match <T>::consume_from(source) {
+            Err(_) => (None, source),
+            Ok((item, unconsumed)) => (Some(item), unconsumed),
+        })
     }
 }
 
 impl<T: Consumable> Consumable for Box<T> {
-    type ConsumeError = T::ConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Box<T>, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Box<T>, &str), ConsumeError> {
         <T>::consume_from(s).map(|(item, unconsumed)| (Box::new(item), unconsumed))
     }
 }
 
 impl<T: Consumable> Consumable for Vec<T> {
-    type ConsumeError = T::ConsumeError;
-
-    fn consume_from(s: &str) -> Result<(Vec<T>, &str), Self::ConsumeError> {
+    fn consume_from(s: &str) -> Result<(Vec<T>, &str), ConsumeError> {
         let mut sequence = Vec::new();
         let mut last_unconsumed = s;
 
@@ -33,17 +30,42 @@ impl<T: Consumable> Consumable for Vec<T> {
     }
 }
 
-impl<T, J> Consumable for (T, J)
-where
-    T: Consumable,
-    J: Consumable,
-{
-    type ConsumeError = Either<T::ConsumeError, J::ConsumeError>;
+use crate::ConsumeSource;
 
-    fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
-        let (t_item, unconsumed) = T::consume_from(s).map_err(|err| Left(err))?;
-        let (j_item, unconsumed) = J::consume_from(unconsumed).map_err(|err| Right(err))?;
+macro_rules! consume_concat {
+    ( $( $type_ident:ident ),+ ) => {
+        impl<$( $type_ident ),+> Consumable for ($( $type_ident ),+)
+        where
+            $( $type_ident: Consumable ),+
+        {
+            fn consume_from(source: &str) -> Result<(Self, &str), ConsumeError> {
+                let mut unconsumed = source;
+                let mut offset = 0;
 
-        Ok(((t_item, j_item), unconsumed))
-    }
+                Ok(
+                    (
+                        (
+                            $(
+                                unconsumed
+                                    .mut_consume_by::<$type_ident>()
+                                    .map_err( |err| { err.offset(offset) } )
+                                    .map( |(item, by)| { offset += by; item } )?
+                            ),+
+                        ),
+                        unconsumed
+                    )
+                )
+            }
+        }
+    };
 }
+
+consume_concat!(A, B);
+consume_concat!(A, B, C);
+consume_concat!(A, B, C, D);
+consume_concat!(A, B, C, D, E);
+consume_concat!(A, B, C, D, E, F);
+consume_concat!(A, B, C, D, E, F, G);
+consume_concat!(A, B, C, D, E, F, G, H);
+consume_concat!(A, B, C, D, E, F, G, H, I);
+consume_concat!(A, B, C, D, E, F, G, H, I, J);
