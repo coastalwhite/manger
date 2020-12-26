@@ -1,26 +1,37 @@
-use crate::{Consumable, ConsumeSource};
-
 #[macro_export]
-macro_rules! consume_syntax {
+macro_rules! consume_syntax_struct {
+    ( @args $struct_name:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+        $struct_name ( $( $prop ),* )
+    };
+    ( @args $struct_name:ident, $( $prop_name:ident ),* ) => {
+        $struct_name { $( $prop_name ),* }
+    };
+
     (
         $struct_name:ident => [
             $(
                 $( $prop_name:ident: $prop_type:ty $( { $prop_transform:expr } )? )?
-                $( > $cons_type:ty $( { $cons_condition:expr } )?)?
-                $( | $cons_expr:expr )?
-            ),+
+                $( : $cons_type:ty $( { $cons_condition:expr } )?)?
+                $( > $cons_expr:expr )?
+            ),*
+            ;
+            $( ( $( $prop:ident ),* ) )?
         ] ) => {
-        impl Consumable for $struct_name {
+        impl $crate::Consumable for $struct_name {
             type ConsumeError = ();
 
             fn consume_from(s: &str) -> Result<(Self, &str), Self::ConsumeError> {
+                #[allow(unused_imports)]
+                use $crate::ConsumeSource;
+
                 let unconsumed = s;
 
                 $(
                     $(
                         let ($prop_name, unconsumed) = <$prop_type>::consume_from(unconsumed).map_err(|_| ())?;
+
                         $(
-                            let $prop_name = $prop_transform;
+                            let $prop_name = ($prop_transform)($prop_name);
                         )?
                     )?
 
@@ -40,50 +51,22 @@ macro_rules! consume_syntax {
                         )?
                         ?;
                     )?
-
                     $(
                         let (_, unconsumed) = <&str>::consume(&unconsumed, &$cons_expr).map_err(|_| ())?;
                     )?
                 )+
 
-                Ok(($struct_name { $( $( $prop_name, )? )+ }, unconsumed))
+                Ok(
+                    (
+                        $crate::consume_syntax_struct!(
+                            @args $struct_name,
+                            $( $( $prop_name, )* )?
+                            $( => ( $( $prop ),* ) )?
+                        ),
+                        unconsumed
+                    )
+                )
             }
         }
     };
-}
-
-struct XYZ {
-    x: u32,
-    y: u32,
-    z: u32,
-}
-
-struct MoveCommand {
-    x: f32,
-    y: f32,
-}
-
-consume_syntax!(
-    XYZ => [
-        | "Hier komt een XYZ: {",
-        | "x: ",
-          x: u32,
-        | ", y: ",
-          y: u32,
-        | ", z: ",
-          z: u32,
-        | "}"
-    ]
-);
-
-#[test]
-fn test_func() {
-    let (xyz, unconsumed) =
-        XYZ::consume_from("Hier komt een XYZ: {x: 234, y: 323, z: 3244} Hallo!").unwrap();
-
-    assert_eq!(unconsumed, " Hallo!");
-
-    assert_eq!(xyz.x, 234);
-    assert_eq!(xyz.y, 323);
-    assert_eq!(xyz.z, 3244);
 }

@@ -9,6 +9,14 @@ impl<T: Consumable> Consumable for Option<T> {
     }
 }
 
+impl<T: Consumable> Consumable for Box<T> {
+    type ConsumeError = T::ConsumeError;
+
+    fn consume_from(s: &str) -> Result<(Box<T>, &str), Self::ConsumeError> {
+        <T>::consume_from(s).map(|(item, unconsumed)| (Box::new(item), unconsumed))
+    }
+}
+
 impl<T: Consumable> Consumable for Vec<T> {
     type ConsumeError = T::ConsumeError;
 
