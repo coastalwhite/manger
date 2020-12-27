@@ -197,10 +197,10 @@ pub mod alphabet {
     }
 }
 
-use crate::consume_syntax;
+use crate::consume_struct;
 pub struct Whitespace;
 
-consume_syntax!(
+consume_struct!(
     Whitespace => [
         : char { |token: char| token.is_whitespace() };
     ]

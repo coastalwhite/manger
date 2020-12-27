@@ -32,13 +32,13 @@ use error::ConsumeError;
 /// # Examples
 ///
 /// ```
-/// use manger::{Consumable, OneOrMore, consume_syntax};
+/// use manger::{Consumable, OneOrMore, consume_struct};
 ///
 /// let source = "(2)(3)(7)";
 ///
 /// // EncasedInteger will be consuming strings like "(123)" and "(42)"
 /// struct EncasedInteger { value: u32 };
-/// consume_syntax!(
+/// consume_struct!(
 ///     EncasedInteger => [
 ///         > '(',
 ///         value: u32,

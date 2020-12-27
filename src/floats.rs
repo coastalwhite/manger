@@ -2,7 +2,7 @@ use crate::chars;
 use crate::error::ConsumeError;
 use crate::error::ConsumeErrorType::*;
 use crate::standard::{Digit, Sign};
-use crate::{consume_syntax, Consumable, OneOrMore};
+use crate::{consume_enum, Consumable, OneOrMore};
 use std::str::FromStr;
 
 enum FloatNumberStruct {
@@ -11,7 +11,7 @@ enum FloatNumberStruct {
     PeriodMiddle,
 }
 
-consume_syntax!(
+consume_enum!(
     FloatNumberStruct {
         PeriodStart => [
             : chars::Period,
@@ -35,7 +35,7 @@ enum FloatStructure {
 }
 
 use crate::chars::alphabet;
-consume_syntax!(
+consume_enum!(
     FloatStructure {
         Float => [
             : Sign,

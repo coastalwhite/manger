@@ -1,18 +1,17 @@
+/// A macro used for defining the way a `struct` or `enum` should be consumed.
+///
+/// Implements [`Consumable`][crate::Consumable] for this `struct` or `enum`.
+///  
+/// # Note
+/// 1. Although this macro works without importing any __manger__ traits, they will also not be
+/// imported afterwards. Importing traits should still be done if methods of the trait
+/// are supposed to be used afterwards.
+///
+/// 2. This macro assumed that we are in the same module as the `struct` or `enum`
+/// was defined. Some undefined behaviour might occured, if this macro is called
+/// outside of the module the `struct` or `enum` was created.
 #[macro_export]
-macro_rules! consume_syntax {
-    ( @enumargs $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
-        $enum_name::$ident ( $( $prop ),* )
-    };
-    ( @enumargs $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
-        $enum_name::$ident { $( $prop_name ),* }
-    };
-    ( @structargs $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
-        $struct_name ( $( $prop ),* )
-    };
-    ( @structargs $struct_name:ident, $( $prop_name:ident, )* ) => {
-        $struct_name { $( $prop_name, ),* }
-    };
-
+macro_rules! consume_enum {
     (
         $enum_name:ident {
             $(
@@ -93,8 +92,8 @@ macro_rules! consume_syntax {
 
                         return Ok(
                             (
-                                 $crate::consume_syntax!(
-                                    @enumargs
+                                 $crate::consume_enum!(
+                                    @internal
                                     $enum_name,
                                     $ident,
                                     $(
@@ -112,6 +111,17 @@ macro_rules! consume_syntax {
             }
         }
     };
+
+    ( @internal $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+        $enum_name::$ident ( $( $prop ),* )
+    };
+    ( @internal $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
+        $enum_name::$ident { $( $prop_name ),* }
+    };
+}
+
+#[macro_export]
+macro_rules! consume_struct {
     (
         $struct_name:ident => [
             $(
@@ -173,8 +183,8 @@ macro_rules! consume_syntax {
 
                 Ok(
                     (
-                        $crate::consume_syntax!(
-                            @structargs $struct_name,
+                        $crate::consume_struct!(
+                            @internal $struct_name,
                             $( $( $prop_name, )* )?
                             $( => ( $( $prop ),* ) )?
                         ),
@@ -183,6 +193,13 @@ macro_rules! consume_syntax {
                 )
             }
         }
+    };
+
+    ( @internal $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
+        $struct_name ( $( $prop ),* )
+    };
+    ( @internal $struct_name:ident, $( $prop_name:ident, )* ) => {
+        $struct_name { $( $prop_name, ),* }
     };
 }
 
@@ -212,7 +229,7 @@ mod tests {
             Orange(OrangeTaste),
         }
 
-        consume_syntax!(
+        consume_enum!(
             AppleColor {
                 Green => [
                     > "green";
@@ -226,7 +243,7 @@ mod tests {
             }
         );
 
-        consume_syntax!(
+        consume_enum!(
             OrangeTaste {
                 Sweet => [
                     > "sweet";
@@ -237,7 +254,7 @@ mod tests {
             }
         );
 
-        consume_syntax!(
+        consume_enum!(
             Fruit {
                 Apple => [
                     color: AppleColor,
@@ -364,7 +381,7 @@ mod tests {
         use crate::chars::Whitespace;
         use crate::OneOrMore;
 
-        consume_syntax!(
+        consume_enum!(
             Expression {
                 Times => [
                     > '*',
