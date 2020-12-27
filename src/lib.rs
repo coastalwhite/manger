@@ -1,3 +1,10 @@
+#![warn(
+    future_incompatible,
+    rust_2018_idioms,
+    missing_docs,
+    missing_doc_code_examples,
+    missing_debug_implementations
+)]
 //! # Manger
 //!
 //! ## A performant, low-level, lightweight and intuitive parsing library
@@ -9,178 +16,12 @@
 //! Manger has a optimatized standard library including parsing for integers,
 //! floating-point and UTF-8.
 
-use error::ConsumeError;
+#[doc(inline)]
+pub use one_or_more::OneOrMore;
 
-/// Collection struct which stores one or more items of type `T`.
-///
-/// This is used within the [__manger__ crate][crate]
-/// to express consuming one of more of an item from a string.
-/// This would be equavalent to the `+` operator in
-/// [EBNF syntax](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) or
-/// [RegEx](https://en.wikipedia.org/wiki/Regular_expression).
-///
-/// # Note
-///
-/// While `OneOrMore` is not iterable, the
-/// [`into_iter`][crate::OneOrMore::into_iter],
-/// [`into_vec`][crate::OneOrMore::into_vec],
-/// [`ref_vec`][crate::OneOrMore::ref_vec] and
-/// [`mut_vec`][crate::OneOrMore::mut_vec]
-/// can be used to iterate over the items contained within the structs
-/// and do further data manipulation.
-///
-/// # Examples
-///
-/// ```
-/// use manger::{Consumable, OneOrMore, consume_struct};
-///
-/// let source = "(2)(3)(7)";
-///
-/// // EncasedInteger will be consuming strings like "(123)" and "(42)"
-/// struct EncasedInteger { value: u32 };
-/// consume_struct!(
-///     EncasedInteger => [
-///         > '(',
-///         value: u32,
-///         > ')';
-///     ]
-/// );
-///
-/// let (encased_integers, _) = <OneOrMore<EncasedInteger>>::consume_from(source)?;
-/// let product: u32 = encased_integers
-///         .into_iter()
-///         .map(|encased_integer| encased_integer.value)
-///         .product();
-///
-/// assert_eq!(product, 42);
-/// # Ok::<(), manger::error::ConsumeError>(())
-/// ```
+#[doc(inline)]
+pub use error::{ConsumeError, ConsumeErrorType};
 
-#[derive(Debug)]
-pub struct OneOrMore<T: Consumable> {
-    /// The element that is guarenteed to be consumed
-    head: T,
-    /// Other items had are possibly parsed
-    tail: Vec<T>,
-}
-
-impl<T: Consumable> OneOrMore<T> {
-    /// Getter for the first item of the `OneOrMore<T>`. Because there were one or more
-    /// consumed, this will always contain an item.
-    pub fn head(&self) -> &T {
-        &self.head
-    }
-
-    /// Getter for the rest of the element in the `OneOrMore<T>`. This is not guarenteed
-    /// to contain elements.
-    pub fn tail(&self) -> &Vec<T> {
-        &self.tail
-    }
-
-    /// Take ownership `self` of type `OneOrMore<T>` and return a `Vec<T>` owning all
-    /// the items `self` used to contain.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use manger::{OneOrMore, Consumable};
-    ///
-    /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
-    ///
-    /// let uppercased: String = items
-    ///     .into_vec()
-    ///     .into_iter()
-    ///     .filter(|character| character.is_ascii_uppercase())
-    ///     .collect();
-    ///
-    /// assert_eq!(uppercased, "BEF");
-    /// # Ok::<(), manger::error::ConsumeError>(())
-    /// ```
-    pub fn into_vec(self) -> Vec<T> {
-        let mut vec = Vec::with_capacity(self.tail().len() + 1);
-
-        vec.push(self.head);
-        self.tail.into_iter().for_each(|item| vec.push(item));
-
-        vec
-    }
-
-    /// Returns a vector with references to the items in the `OneOrMore<T>`.
-    /// This will not take ownership of the the items in `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use manger::{OneOrMore, Consumable};
-    ///
-    /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
-    ///
-    /// let uppercased: String = items
-    ///     .ref_vec()
-    ///     .into_iter()
-    ///     .filter(|character| character.is_ascii_uppercase())
-    ///     .collect();
-    ///
-    /// assert_eq!(uppercased, "BEF");
-    /// # Ok::<(), manger::error::ConsumeError>(())
-    /// ```
-    pub fn ref_vec(&self) -> Vec<&T> {
-        let mut vec = Vec::with_capacity(self.tail().len() + 1);
-
-        vec.push(&self.head);
-        self.tail.iter().for_each(|item| vec.push(&item));
-
-        vec
-    }
-
-    /// Returns a vector with mutable references to the items in the `OneOrMore<T>`.
-    /// This will not take ownership of the the items in `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use manger::{OneOrMore, Consumable};
-    ///
-    /// let (mut items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
-    ///
-    /// items
-    ///     .mut_vec()
-    ///     .iter_mut()
-    ///     .filter(|character| character.is_ascii_uppercase())
-    ///     .for_each(|character| **character = character.to_ascii_lowercase());
-    ///
-    /// let lowercased: String = items.into_iter().collect();
-    ///
-    /// assert_eq!(lowercased, "abcdefg");
-    /// # Ok::<(), manger::error::ConsumeError>(())
-    /// ```
-    pub fn mut_vec(&mut self) -> Vec<&mut T> {
-        let mut vec = Vec::with_capacity(self.tail().len() + 1);
-
-        vec.push(&mut self.head);
-        self.tail.iter_mut().for_each(|item| vec.push(item));
-
-        vec
-    }
-}
-
-impl<T: Consumable> IntoIterator for OneOrMore<T> {
-    type Item = T;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into_vec().into_iter()
-    }
-}
-
-impl<T: Consumable> Consumable for OneOrMore<T> {
-    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
-        let (head, unconsumed) = T::consume_from(s)?;
-        let (tail, unconsumed) = <Vec<T>>::consume_from(unconsumed)?;
-
-        Ok((OneOrMore { head, tail }, unconsumed))
-    }
-}
 /// Consume one or more with a delimiter between elements
 pub type MultipleWithDelimiter<T, D> = (Vec<(T, D)>, T);
 
@@ -252,6 +93,15 @@ pub trait Consumable: Sized {
     }
 }
 
+/// Trait which allows for consuming of instances and literals from a string.
+/// This trait should be mostly used for types with a bijection to a string representation,
+/// which includes the `char` and `&str`. This does not include floating points, because
+/// "42" and "4.2e1" will both consume to 42.
+///
+/// # Note
+///
+/// For the reason mentioned before, this is not implemented for `f32` and `f64`. Similarly,
+/// this is also not implemented for `u8`, `u16`, `u32`, `u64`, `i8`, `i1
 pub trait SelfConsumable {
     /// Attempt to consume a literal `item` from a `source` string. When consuming
     /// is succesful, it will return the unconsumed part of the `source`. When consuming
@@ -482,13 +332,14 @@ where
     }
 }
 
-pub mod chars;
 mod either;
 mod enum_macro;
-pub mod error;
-pub mod floats;
+mod error;
+mod floats;
 mod impls;
 pub mod integers;
+mod one_or_more;
 pub mod standard;
 mod strs;
 mod struct_macro;
+pub mod utf8;

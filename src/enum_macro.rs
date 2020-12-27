@@ -48,10 +48,10 @@
 ///
 ///             // Saving data looks as such `KEY: TYPE`
 ///             //
-///             // Note: Optionally, we can suffix a type with `{ Fn(data) -> T }` to add
-///             // an post consuming mapping to the data consumed. For example, we could
-///             // have written `num_of_bananas: u32 { |d| d + 1 }`, to add one to amount
-///             // we are consuming.
+///             // Note: Optionally, we can suffix a type with `{ Fn(data) -> bool }` to add
+///             // an extra condition for consuming. Therefore, if we could have suffixed
+///             // `{ |data| data >= 5 }`, we would require the `num_of_bananas` to be at
+///             // least 5.
 ///             num_of_bananas: u32;
 ///
 ///             // Now we can use all our saved data to define what to do
@@ -72,7 +72,7 @@
 ///             (num_of_grapes_boxes*num_of_grapes_per_box)
 ///         ],
 ///         
-///         // We also add an catch-all clause.
+///         // We can also add an catch-all clause.
 ///         Unknown => [ > ""; ]
 ///
 ///         // We can also have a variant we are not consuming to.
