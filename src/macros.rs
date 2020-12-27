@@ -6,6 +6,12 @@ macro_rules! consume_syntax {
     ( @enumargs $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
         $enum_name::$ident { $( $prop_name ),* }
     };
+    ( @structargs $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
+        $struct_name ( $( $prop ),* )
+    };
+    ( @structargs $struct_name:ident, $( $prop_name:ident, )* ) => {
+        $struct_name { $( $prop_name, ),* }
+    };
 
     (
         $enum_name:ident {
@@ -87,7 +93,7 @@ macro_rules! consume_syntax {
 
                         return Ok(
                             (
-                                 consume_syntax!(
+                                 $crate::consume_syntax!(
                                     @enumargs
                                     $enum_name,
                                     $ident,
@@ -106,13 +112,6 @@ macro_rules! consume_syntax {
             }
         }
     };
-    ( @structargs $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
-        $struct_name ( $( $prop ),* )
-    };
-    ( @structargs $struct_name:ident, $( $prop_name:ident, )* ) => {
-        $struct_name { $( $prop_name, ),* }
-    };
-
     (
         $struct_name:ident => [
             $(
@@ -174,7 +173,7 @@ macro_rules! consume_syntax {
 
                 Ok(
                     (
-                        consume_syntax!(
+                        $crate::consume_syntax!(
                             @structargs $struct_name,
                             $( $( $prop_name, )* )?
                             $( => ( $( $prop ),* ) )?
