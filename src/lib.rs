@@ -484,11 +484,11 @@ where
 
 pub mod chars;
 mod either;
+mod enum_macro;
 pub mod error;
 pub mod floats;
 mod impls;
 pub mod integers;
-pub mod macros;
 pub mod standard;
 mod strs;
-pub mod util;
+mod struct_macro;

@@ -1,15 +1,101 @@
-/// A macro used for defining the way a `struct` or `enum` should be consumed.
-///
-/// Implements [`Consumable`][crate::Consumable] for this `struct` or `enum`.
+/// A macro used for defining the way a `enum` should be consumed.
+/// It will implement [`Consumable`][crate::Consumable] for this `enum`.
 ///  
 /// # Note
+///
 /// 1. Although this macro works without importing any __manger__ traits, they will also not be
 /// imported afterwards. Importing traits should still be done if methods of the trait
 /// are supposed to be used afterwards.
 ///
-/// 2. This macro assumed that we are in the same module as the `struct` or `enum`
-/// was defined. Some undefined behaviour might occured, if this macro is called
-/// outside of the module the `struct` or `enum` was created.
+/// 2. This macro assumed that we are in the same module as the `enum` mentioned
+/// was defined. Some undefined behaviour might occur if this macro is called
+/// outside of the module the `enum` was created.
+///
+/// # Syntax
+///
+/// The basic syntax for using this macros looks as follows:
+///
+/// ```
+/// use manger::consume_enum;
+///
+/// #[derive(PartialEq, Debug)]
+/// enum HowManyFruits {
+///     HasBananas(u32),
+///     HasGrapes(u32),
+///     NotThisOne,
+///     Unknown
+/// }
+/// consume_enum! (
+///     HowManyFruits {
+///         HasBananas => [
+///             // Now a list of sequential instruction
+///             //
+///             // Note: We have a comma after every instruction, but we end
+///             // with a semicolon.
+///
+///             // Consuming expression looks like `> EXPRESSION`
+///             > "bananas:",
+///
+///             // Consuming arbitrary data from a certain type looks like `: TYPE`
+///             //
+///             // Here we use the build in Whitespace type of consume anytype
+///             // whitespace character.
+///             //
+///             // Note: Optionally, we can suffix a type with `{ Fn(data) -> bool }` to add
+///             // an extra condition for consuming. Therefore, if we would have wrote
+///             // `: char { |c| c.is_whitespace() }`, it would have had the same behaviour.
+///             : manger::chars::Whitespace,
+///
+///             // Saving data looks as such `KEY: TYPE`
+///             //
+///             // Note: Optionally, we can suffix a type with `{ Fn(data) -> T }` to add
+///             // an post consuming mapping to the data consumed. For example, we could
+///             // have written `num_of_bananas: u32 { |d| d + 1 }`, to add one to amount
+///             // we are consuming.
+///             num_of_bananas: u32;
+///
+///             // Now we can use all our saved data to define what to do
+///             // with that data.
+///             //
+///             // Since HasBananas takes a (u32) we have to fill such a data structure.
+///             (num_of_bananas)
+///         ],
+///
+///         // We can do the same for another variant.
+///         HasGrapes => [
+///             > "grape boxes: ",
+///             num_of_grapes_boxes: u32,
+///             > ", grapes per box: ",
+///             num_of_grapes_per_box: u32;
+///
+///             // Here we calculate how many grapes there are in total
+///             (num_of_grapes_boxes*num_of_grapes_per_box)
+///         ],
+///         
+///         // We also add an catch-all clause.
+///         Unknown => [ > ""; ]
+///
+///         // We can also have a variant we are not consuming to.
+///         // Here we are not consuming to the `HowManyBananas::NotThisOne` variant.
+///     }
+/// );
+///
+/// // Now we can consume HowManyFruits as normal.
+/// use manger::Consumable;
+///
+/// let source = "bananas: 5";
+/// let (how_many_fruits, _) = <HowManyFruits>::consume_from(source)?;
+///
+/// assert_eq!(how_many_fruits, HowManyFruits::HasBananas(5));
+/// # let source = "grape boxes: 2, grapes per box: 100";
+/// # let (how_many_fruits, _) = <HowManyFruits>::consume_from(source)?;
+/// # assert_eq!(how_many_fruits, HowManyFruits::HasGrapes(200));
+/// #
+/// # let source = "a grape box 2";
+/// # let (how_many_fruits, _) = <HowManyFruits>::consume_from(source)?;
+/// # assert_eq!(how_many_fruits, HowManyFruits::Unknown);
+/// # Ok::<(), manger::error::ConsumeError>(())
+/// ```
 #[macro_export]
 macro_rules! consume_enum {
     (
@@ -17,53 +103,31 @@ macro_rules! consume_enum {
             $(
                 $ident:ident => [
                     $(
-                        $( $prop_name:ident: $prop_type:ty $( { $prop_transform:expr } )? )?
-                        $( : $cons_type:ty $( { $cons_condition:expr } )? )?
+                        $( $( $prop_name:ident )?: $cons_type:ty $( { $cons_condition:expr } )? )?
                         $( > $cons_expr:expr )?
                     ),*
                     ;
                     $(
-                        ( $( $prop:ident ),* )
+                        ( $( $prop:expr ),* )
                     )?
                 ]
             ),+
         }
     ) => {
         impl $crate::Consumable for $enum_name {
-            #[allow(unconditional_recursion)]
             fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
                 let mut error = $crate::error::ConsumeError::new();
 
                 $(
+                    #[allow(unconditional_recursion)]
                     loop {
-                        #[allow(unused_imports)]
-                        use $crate::ConsumeSource;
-
                         let mut unconsumed = source;
                         let mut offset = 0;
 
                         $(
                             $(
-                                #[allow(unused_assignments)]
-                                let $prop_name = match unconsumed.mut_consume_by::<$prop_type>() {
-                                        Err(err) => {
-                                            error.add_causes(err.offset(offset));
-                                            break;
-                                        },
-                                        Ok((prop, by)) => {
-                                            offset += by;
-                                            prop
-                                        }
-                                };
-
-                                $(
-                                    let $prop_name = ($prop_transform)($prop_name);
-                                )?
-                            )?
-
-                            $(
-                                if let Err(err) = unconsumed.mut_consume_by::<$cons_type>()
-                                    .map( |(item, by)| { offset += by; item })
+                                $( let $prop_name = )?
+                                match $crate::ConsumeSource::mut_consume_by::<$cons_type>(&mut unconsumed)
                                 $(
                                     .and_then(
                                         |(item, unconsumed)| {
@@ -74,15 +138,27 @@ macro_rules! consume_enum {
                                             }
                                         }
                                     )
-                                )? {
-                                    error.add_causes(err.offset(offset));
-                                    break;
-                                }
+                                )?
+                                {
+                                        Err(err) => {
+                                            error.add_causes(err.offset(offset));
+                                            break;
+                                        },
+                                        Ok((prop, by)) => {
+                                            #[allow(unused_assignments)]
+                                            { offset += by };
+                                            prop
+                                        }
+                                };
                             )?
 
                             $(
-                                if let Err(err) = unconsumed.mut_consume_lit(&$cons_expr)
-                                    .map( |by| offset += by )
+                                if let Err(err) = $crate::ConsumeSource::mut_consume_lit(&mut unconsumed, &$cons_expr)
+                                    .map(|by| {
+                                        #[allow(unused_assignments)]
+                                        { offset += by };
+                                    }
+                                    )
                                 {
                                     error.add_causes(err.offset(offset));
                                     break;
@@ -97,7 +173,7 @@ macro_rules! consume_enum {
                                     $enum_name,
                                     $ident,
                                     $(
-                                        $( $prop_name, )?
+                                        $( $( $prop_name, )? )?
                                     )*
                                     $( => ( $( $prop ),* ) )?
                                 ),
@@ -112,94 +188,11 @@ macro_rules! consume_enum {
         }
     };
 
-    ( @internal $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+    ( @internal $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:expr ),* ) ) => {
         $enum_name::$ident ( $( $prop ),* )
     };
     ( @internal $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
         $enum_name::$ident { $( $prop_name ),* }
-    };
-}
-
-#[macro_export]
-macro_rules! consume_struct {
-    (
-        $struct_name:ident => [
-            $(
-                $( $prop_name:ident: $prop_type:ty $( { $prop_transform:expr } )? )?
-                $( : $cons_type:ty $( { $cons_condition:expr } )?)?
-                $( > $cons_expr:expr )?
-            ),*
-            ;
-            $( ( $( $prop:ident ),* ) )?
-        ] ) => {
-        impl $crate::Consumable for $struct_name {
-            fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
-                #[allow(unused_imports)]
-                use $crate::ConsumeSource;
-
-                let mut unconsumed = source;
-                let mut offset = 0;
-
-                $(
-                    $(
-                        let $prop_name = unconsumed.mut_consume_by::<$prop_type>()
-                            .map(|(prop, by)| {
-                                offset += by;
-                                prop
-                            })
-                            .map_err( |err| err.offset(offset) )?;
-
-                        $(
-                            let $prop_name = ($prop_transform)($prop_name);
-                        )?
-                    )?
-
-                    $(
-                        unconsumed.mut_consume_by::<$cons_type>()
-                        $(
-                            .and_then(
-                                |(item, by)| {
-                                    if ($cons_condition)(item) {
-                                        Ok((item, by))
-                                    } else {
-                                        Err(
-                                            $crate::error::ConsumeError::new_with(
-                                                $crate::error::ConsumeErrorType::InvalidValue { index: offset }
-                                            )
-                                        )
-                                    }
-                                }
-                            )
-                        )?
-                            .map( |(_, by)| offset += by )
-                            .map_err( |err| err.offset(offset) )?;
-                    )?
-                    $(
-                        unconsumed.mut_consume_lit(&$cons_expr)
-                            .map(|by| offset += by)
-                            .map_err( |err| err.offset(offset) )?;
-                    )?
-                )+
-
-                Ok(
-                    (
-                        $crate::consume_struct!(
-                            @internal $struct_name,
-                            $( $( $prop_name, )* )?
-                            $( => ( $( $prop ),* ) )?
-                        ),
-                        unconsumed
-                    )
-                )
-            }
-        }
-    };
-
-    ( @internal $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
-        $struct_name ( $( $prop ),* )
-    };
-    ( @internal $struct_name:ident, $( $prop_name:ident, )* ) => {
-        $struct_name { $( $prop_name, ),* }
     };
 }
 
