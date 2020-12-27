@@ -32,7 +32,7 @@ use error::ConsumeError;
 /// # Examples
 ///
 /// ```
-/// use manger::{OneOrMore, consume_syntax, Consumable};
+/// use manger::{Consumable, OneOrMore, consume_syntax};
 ///
 /// let source = "(2)(3)(7)";
 ///
