@@ -11,10 +11,51 @@
 
 use error::ConsumeError;
 
-/// Consume one or more of type _T_.
-/// This is equalent of the `+` operator in EBNF syntax or within RegEx.
+/// Collection struct which stores one or more items of type `T`.
 ///
+/// This is used within the [__manger__ crate][crate]
+/// to express consuming one of more of an item from a string.
+/// This would be equavalent to the `+` operator in
+/// [EBNF syntax](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) or
+/// [RegEx](https://en.wikipedia.org/wiki/Regular_expression).
 ///
+/// # Note
+///
+/// While `OneOrMore` is not iterable, the
+/// [`into_iter`][crate::OneOrMore::into_iter],
+/// [`into_vec`][crate::OneOrMore::into_vec],
+/// [`ref_vec`][crate::OneOrMore::ref_vec] and
+/// [`mut_vec`][crate::OneOrMore::mut_vec]
+/// can be used to iterate over the items contained within the structs
+/// and do further data manipulation.
+///
+/// # Examples
+///
+/// ```
+/// use manger::{OneOrMore, consume_syntax, Consumable};
+///
+/// let source = "(2)(3)(7)";
+///
+/// // EncasedInteger will be consuming strings like "(123)" and "(42)"
+/// struct EncasedInteger { value: u32 };
+/// consume_syntax!(
+///     EncasedInteger => [
+///         > '(',
+///         value: u32,
+///         > ')';
+///     ]
+/// );
+///
+/// let (encased_integers, _) = <OneOrMore<EncasedInteger>>::consume_from(source)?;
+/// let product: u32 = encased_integers
+///         .into_iter()
+///         .map(|encased_integer| encased_integer.value)
+///         .product();
+///
+/// assert_eq!(product, 42);
+/// # Ok::<(), manger::error::ConsumeError>(())
+/// ```
+
 #[derive(Debug)]
 pub struct OneOrMore<T: Consumable> {
     /// The element that is guarenteed to be consumed

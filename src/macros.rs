@@ -1,9 +1,9 @@
 #[macro_export]
 macro_rules! consume_syntax {
-    ( @args $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+    ( @enumargs $enum_name:ident, $ident:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
         $enum_name::$ident ( $( $prop ),* )
     };
-    ( @args $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
+    ( @enumargs $enum_name:ident, $ident:ident, $( $prop_name:ident ),* ) => {
         $enum_name::$ident { $( $prop_name ),* }
     };
 
@@ -88,7 +88,7 @@ macro_rules! consume_syntax {
                         return Ok(
                             (
                                  consume_syntax!(
-                                    @args
+                                    @enumargs
                                     $enum_name,
                                     $ident,
                                     $(
@@ -106,11 +106,11 @@ macro_rules! consume_syntax {
             }
         }
     };
-    ( @args $struct_name:ident, $( $prop_name:ident ),*, => ( $( $prop:ident ),* ) ) => {
+    ( @structargs $struct_name:ident, $( $prop_name:ident, )* => ( $( $prop:ident ),* ) ) => {
         $struct_name ( $( $prop ),* )
     };
-    ( @args $struct_name:ident, $( $prop_name:ident ),* ) => {
-        $struct_name { $( $prop_name ),* }
+    ( @structargs $struct_name:ident, $( $prop_name:ident, )* ) => {
+        $struct_name { $( $prop_name, ),* }
     };
 
     (
@@ -166,7 +166,7 @@ macro_rules! consume_syntax {
                             .map_err( |err| err.offset(offset) )?;
                     )?
                     $(
-                        unconsumed.consume_lit(&$cons_expr)
+                        unconsumed.mut_consume_lit(&$cons_expr)
                             .map(|by| offset += by)
                             .map_err( |err| err.offset(offset) )?;
                     )?
@@ -175,7 +175,7 @@ macro_rules! consume_syntax {
                 Ok(
                     (
                         consume_syntax!(
-                            @args $struct_name,
+                            @structargs $struct_name,
                             $( $( $prop_name, )* )?
                             $( => ( $( $prop ),* ) )?
                         ),
