@@ -10,3 +10,6 @@ edition = "2018"
 utf8_slice = "^1.0.0"
 either = "1.6.1"
 thiserror = "1.0"
+
+[dev-dependencies]
+trybuild = "1.0.38"
