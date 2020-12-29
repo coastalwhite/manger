@@ -1,8 +1,8 @@
 use crate::chars;
+use crate::common::{Digit, OneOrMore, Sign};
 use crate::error::ConsumeError;
 use crate::error::ConsumeErrorType::*;
-use crate::standard::{Digit, Sign};
-use crate::{consume_enum, Consumable, OneOrMore};
+use crate::{consume_enum, Consumable};
 use std::str::FromStr;
 
 enum FloatNumberStruct {
@@ -34,29 +34,29 @@ enum FloatStructure {
     NaN,
 }
 
-use crate::chars::alphabet;
+use crate::chars::alpha;
 consume_enum!(
     FloatStructure {
         Float => [
             : Sign,
             : FloatNumberStruct,
-            : Option<(alphabet::E, OneOrMore<Digit>)>;
+            : Option<(alpha::E, OneOrMore<Digit>)>;
         ],
         Infinity => [
             : Sign,
-            : alphabet::I,
-            : alphabet::N,
-            : alphabet::F,
-            : alphabet::I,
-            : alphabet::N,
-            : alphabet::I,
-            : alphabet::T,
-            : alphabet::Y;
+            : alpha::I,
+            : alpha::N,
+            : alpha::F,
+            : alpha::I,
+            : alpha::N,
+            : alpha::I,
+            : alpha::T,
+            : alpha::Y;
         ],
         NaN => [
-            : alphabet::N,
-            : alphabet::A,
-            : alphabet::N;
+            : alpha::N,
+            : alpha::A,
+            : alpha::N;
         ]
     }
 );
@@ -73,24 +73,5 @@ impl Consumable for f32 {
             .map_err(|_| ConsumeError::new_with(InvalidValue { index: 0 }))?,
             unconsumed,
         ))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Consumable;
-
-    #[test]
-    fn test_f32_parsing() {
-        // assert_eq!(f32::consume_from("1.2e12").unwrap().0, 1.2e12f32);
-        assert_eq!(
-            <Option<(
-                crate::chars::alphabet::E,
-                crate::OneOrMore<crate::standard::Digit>
-            )>>::consume_how_many_from("e12")
-            .unwrap()
-            .2,
-            3
-        );
     }
 }
