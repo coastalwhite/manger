@@ -51,7 +51,7 @@ consume_enum!(
             : chars::Plus;
         ],
         Empty => [
-            : common::Nothing;
+            : common::CatchAll;
         ]
     }
 );
