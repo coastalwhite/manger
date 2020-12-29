@@ -1,6 +1,14 @@
+//! Types for consuming individual __utf-8 characters__.
+//!
+//! This module contains common ASCII characters,
+//! latin alphabetic letters and decimals numeric digits.
+
 use crate::error::ConsumeError;
 use crate::error::ConsumeErrorType::*;
 use crate::{Consumable, SelfConsumable};
+
+// Trait implementations for `char`
+// --------------------------------
 
 impl SelfConsumable for char {
     fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError> {
@@ -26,6 +34,8 @@ impl Consumable for char {
         }
     }
 }
+
+// --------------------------------
 
 macro_rules! declare_ascii {
     ( $( $struct_name:ident => $char:literal ),+ ) => {
