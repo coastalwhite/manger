@@ -17,13 +17,107 @@
 //! floating-point and UTF-8.
 
 #[doc(inline)]
-pub use one_or_more::OneOrMore;
-
-#[doc(inline)]
 pub use error::{ConsumeError, ConsumeErrorType};
 
-#[doc(inline)]
-pub use consumable::Consumable;
+/// Trait used to do efficient parsing.
+pub trait Consumable: Sized {
+    /// Attempt consume from `source` to form an item of `Self`. When consuming is
+    /// succesful, it returns the item along with the unconsumed part of the source.
+    /// When consuming is unsuccesful it returns the corresponding error.
+    ///
+    /// This is the core function to implement when implementing the
+    /// [`Consumable`](#) trait.
+    ///
+    /// # Implemention note
+    ///
+    /// It is highly recommended to take into account UTF-8 characters. This is
+    /// reasonably easy with `.chars()` on `&str` or with the crate
+    /// [`utf8-slice`](https://crates.io/crates/utf8_slice).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> Result<(), manger::error::ConsumeError> {
+    /// use manger::Consumable;
+    ///
+    /// let source = "42 is the answer!";
+    ///
+    /// let (answer, unconsumed) = u32::consume_from(source)?;
+    ///
+    /// assert_eq!(answer, 42);
+    /// assert_eq!(unconsumed, " is the answer!");
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn consume_from(source: &str) -> Result<(Self, &str), ConsumeError>;
+
+    /// Attempt consume from `source` to form an item of `Self`. When consuming is
+    /// succesful, it returns the item along with the unconsumed part of the source
+    /// and the amount of consumed characters.
+    /// When consuming is unsuccesful it returns the corresponding error.
+    ///
+    /// # Note
+    ///
+    /// This counts UTF-8 characters and not byte indices. This can create some
+    /// confusion when slicing afterwards. One can use a crate such as
+    /// [`utf8-slice`](https://crates.io/crates/utf8_slice) to compensate for this.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> Result<(), manger::error::ConsumeError> {
+    /// use manger::Consumable;
+    ///
+    /// let source = "42 is the answer!";
+    ///
+    /// let (answer, unconsumed, consumed_amount) = u32::consume_how_many_from(source)?;
+    ///
+    /// assert_eq!(answer, 42);
+    /// assert_eq!(unconsumed, " is the answer!");
+    /// assert_eq!(consumed_amount, 2);
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn consume_how_many_from(source: &str) -> Result<(Self, &str, usize), ConsumeError> {
+        let start_len = utf8_slice::len(source);
+        let (item, unconsumed) = Self::consume_from(source)?;
+        let end_len = utf8_slice::len(unconsumed);
+
+        Ok((item, unconsumed, start_len - end_len))
+    }
+
+    /// Fetch a iterator of `source` to inorderly consume items of `Self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::{ Consumable, consume_struct };
+    ///
+    /// let source = "(3)(4)(5)";
+    ///
+    /// struct EncasedInteger(u32);
+    /// consume_struct!(
+    ///     EncasedInteger => [
+    ///         > '(',
+    ///         value: u32,
+    ///         > ')';
+    ///         (value)
+    ///     ]
+    /// );
+    ///
+    /// let product: u32 = EncasedInteger::consume_iter(source)
+    ///     .map(|EncasedInteger(value)| value)
+    ///     .product();
+    ///
+    /// assert_eq!(product, 60);
+    /// ```
+    fn consume_iter<'a>(source: &'a str) -> ConsumeIter<'a, Self> {
+        ConsumeIter {
+            phantom: std::marker::PhantomData,
+            unconsumed: source,
+        }
+    }
+}
 
 /// Consume one or more with a delimiter between elements
 pub type MultipleWithDelimiter<T, D> = (Vec<(T, D)>, T);
@@ -73,6 +167,7 @@ pub trait SelfConsumable {
     fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError>;
 }
 
+/// j
 pub trait ConsumeSource: Sized {
     /// A shorthand for the [`consume_item`](trait.SelfConsumable.html#tymethod.consume_item).
     /// Here the `source` is `self` and the `item` is `literal`.
@@ -242,18 +337,62 @@ impl<'s> ConsumeSource for &'s str {
     }
 }
 
-#[doc(inline)]
-pub use iter::ConsumeIter;
+/// Iterator over a `source` for a `Consumable` type `T`.
+///
+/// Will consume items of type 'T' in the order of the `source`.
+///
+/// # Examples
+///
+/// ```
+/// use manger::{ Consumable, consume_struct };
+///
+/// let source = "(3)(4)(5)";
+///
+/// struct EncasedInteger(u32);
+/// consume_struct!(
+///     EncasedInteger => [
+///         > '(',
+///         value: u32,
+///         > ')';
+///         (value)
+///     ]
+/// );
+///
+/// let product: u32 = EncasedInteger::consume_iter(source)
+///     .map(|EncasedInteger(value)| value)
+///     .product();
+///
+/// assert_eq!(product, 60);
+/// ```
+#[derive(Debug)]
+pub struct ConsumeIter<'a, T>
+where
+    T: Consumable,
+{
+    phantom: std::marker::PhantomData<T>,
+    unconsumed: &'a str,
+}
+
+impl<'a, T> Iterator for ConsumeIter<'a, T>
+where
+    T: Consumable,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let (item_option, unconsumed) = <Option<T>>::consume_from(self.unconsumed).unwrap();
+        self.unconsumed = unconsumed;
+
+        item_option
+    }
+}
 
 pub mod chars;
 pub mod common;
-mod consumable;
 mod either;
 mod enum_macro;
 mod error;
 mod floats;
 mod impls;
 mod integers;
-mod iter;
 mod strs;
 mod struct_macro;
