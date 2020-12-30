@@ -96,7 +96,7 @@
 //!
 //! let (encased_integers, _) = <Vec<EncasedInteger>>::consume_from(source)?;
 //!
-//! let sum = encased_integers
+//! let sum: i32 = encased_integers
 //!     .iter()
 //!     .map(|EncasedInteger(value)| value)
 //!     .sum();
@@ -129,8 +129,8 @@
 //!
 //! let (encased_integers, _) = <OneOrMore<EncasedInteger>>::consume_from(source)?;
 //!
-//! let product = encased_integers
-//!     .iter()
+//! let product: i32 = encased_integers
+//!     .into_iter()
 //!     .map(|EncasedInteger(value)| value)
 //!     .product();
 //!
