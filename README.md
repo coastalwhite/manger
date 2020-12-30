@@ -217,13 +217,13 @@ function.
 If two possibilities are present for consuming there are two options to choose from. Both are
 valid in certain scenarios.
 
-## Macro
+#### Macro
 
 Using the `consume_enum` you can create an struct which can be consuming in a number of
 options and you can see which option was selected. If you need to see which of the different
 options was selected, this should be your choice.
 
-## Either<L, R>
+#### Either<L, R>
 
 You can also use the [`Either<L, R>`](https://docs.rs/either/1.6.1/either/enum.Either.html) type to represent the either
 relationship. This option is preferred if we do not care about which option is selected.
