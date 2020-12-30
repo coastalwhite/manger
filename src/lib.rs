@@ -62,7 +62,8 @@ pub use error::{ConsumeError, ConsumeErrorType};
 ///     ]
 /// );
 ///
-/// let product: i32 =  i32::consume_iter(source)
+/// let product: i32 = EncasedInteger::consume_iter(source)
+///     .map(|EncasedInteger(value)| value)
 ///     .product();
 ///
 /// assert_eq!(product, -60);
@@ -84,7 +85,6 @@ pub trait Consumable: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::Consumable;
     ///
     /// let source = "42 is the answer!";
@@ -93,8 +93,7 @@ pub trait Consumable: Sized {
     ///
     /// assert_eq!(answer, 42);
     /// assert_eq!(unconsumed, " is the answer!");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn consume_from(source: &str) -> Result<(Self, &str), ConsumeError>;
 
@@ -112,7 +111,6 @@ pub trait Consumable: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::Consumable;
     ///
     /// let source = "42 is the answer!";
@@ -122,8 +120,7 @@ pub trait Consumable: Sized {
     /// assert_eq!(answer, 42);
     /// assert_eq!(unconsumed, " is the answer!");
     /// assert_eq!(consumed_amount, 2);
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn consume_how_many_from(source: &str) -> Result<(Self, &str, usize), ConsumeError> {
         let start_len = utf8_slice::len(source);
@@ -191,7 +188,6 @@ pub trait SelfConsumable {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::{ Consumable, SelfConsumable };
     ///
     /// let source = "scalar*42";
@@ -205,8 +201,7 @@ pub trait SelfConsumable {
     /// let (num, unconsumed) = u32::consume_from(unconsumed)?;
     /// assert_eq!(num, 42);
     /// assert_eq!(unconsumed, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError>;
 }
@@ -219,7 +214,6 @@ pub trait ConsumeSource: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::ConsumeSource;
     ///
     /// let source = "{42}";
@@ -233,8 +227,7 @@ pub trait ConsumeSource: Sized {
     ///
     /// let unconsumed = unconsumed.consume_lit(&'}')?;
     /// assert_eq!(unconsumed, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn consume_lit<T: SelfConsumable>(self, literal: &T) -> Result<Self, ConsumeError>;
 
@@ -245,7 +238,6 @@ pub trait ConsumeSource: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::ConsumeSource;
     ///
     /// let source = "{42}";
@@ -259,8 +251,7 @@ pub trait ConsumeSource: Sized {
     ///
     /// let unconsumed = unconsumed.consume_lit(&'}')?;
     /// assert_eq!(unconsumed, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn consume<T: Consumable>(self) -> Result<(T, Self), ConsumeError>;
 
@@ -272,7 +263,6 @@ pub trait ConsumeSource: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::ConsumeSource;
     ///
     /// let mut source = "{42}";
@@ -286,8 +276,7 @@ pub trait ConsumeSource: Sized {
     ///
     /// source.mut_consume_lit(&'}')?;
     /// assert_eq!(source, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn mut_consume_lit<T: SelfConsumable>(&mut self, literal: &T) -> Result<usize, ConsumeError>;
 
@@ -299,7 +288,6 @@ pub trait ConsumeSource: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::ConsumeSource;
     ///
     /// let mut source = "{42}";
@@ -313,8 +301,7 @@ pub trait ConsumeSource: Sized {
     ///
     /// source.mut_consume_lit(&'}')?;
     /// assert_eq!(source, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn mut_consume<T: Consumable>(&mut self) -> Result<T, ConsumeError>;
 
@@ -326,7 +313,6 @@ pub trait ConsumeSource: Sized {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), manger::error::ConsumeError> {
     /// use manger::ConsumeSource;
     ///
     /// let mut source = "{42}";
@@ -341,8 +327,7 @@ pub trait ConsumeSource: Sized {
     ///
     /// source.mut_consume_lit(&'}')?;
     /// assert_eq!(source, "");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     fn mut_consume_by<T: Consumable>(&mut self) -> Result<(T, usize), ConsumeError>;
 }

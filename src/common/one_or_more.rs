@@ -11,17 +11,16 @@ use crate::{Consumable, ConsumeError};
 /// # Note
 ///
 /// While `OneOrMore` is not iterable, the
-/// [`into_iter`][crate::OneOrMore::into_iter],
-/// [`into_vec`][crate::OneOrMore::into_vec],
-/// [`ref_vec`][crate::OneOrMore::ref_vec] and
-/// [`mut_vec`][crate::OneOrMore::mut_vec]
+/// [`into_iter`][OneOrMore::into_iter], [`into_vec`][OneOrMore::into_vec],
+/// [`ref_vec`][OneOrMore::ref_vec] and [`mut_vec`][OneOrMore::mut_vec]
 /// can be used to iterate/create iterators over the items contained within the structs
 /// and do further data manipulation.
 ///
 /// # Examples
 ///
 /// ```
-/// use manger::{Consumable, OneOrMore, consume_struct};
+/// use manger::{Consumable, consume_struct};
+/// use manger::common::OneOrMore;
 ///
 /// let source = "(2)(3)(7)";
 ///
@@ -42,7 +41,7 @@ use crate::{Consumable, ConsumeError};
 ///         .product();
 ///
 /// assert_eq!(product, 42);
-/// # Ok::<(), manger::error::ConsumeError>(())
+/// # Ok::<(), manger::ConsumeError>(())
 /// ```
 #[derive(Debug)]
 pub struct OneOrMore<T> {
@@ -62,12 +61,13 @@ impl<T> OneOrMore<T> {
     ///
     /// # Examples
     /// ```
-    /// use manger::{OneOrMore, Consumable};
+    /// use manger::Consumable;
+    /// use manger::common::OneOrMore;
     ///
     /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
     ///
     /// assert_eq!(*items.head(), 'a');
-    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     pub fn head(&self) -> &T {
         &self.head
@@ -81,12 +81,13 @@ impl<T> OneOrMore<T> {
     ///
     /// # Examples
     /// ```
-    /// use manger::{OneOrMore, Consumable};
+    /// use manger::Consumable;
+    /// use manger::common::OneOrMore;
     ///
     /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
     ///
-    /// assert_eq!(*items.tail().iter().collect::<String>(), "BcdEFg");
-    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// assert_eq!(&items.tail().iter().collect::<String>(), "BcdEFg");
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     pub fn tail(&self) -> &Vec<T> {
         &self.tail
@@ -101,7 +102,8 @@ impl<T> OneOrMore<T> {
     /// # Examples
     ///
     /// ```
-    /// use manger::{OneOrMore, Consumable};
+    /// use manger::Consumable;
+    /// use manger::common::OneOrMore;
     ///
     /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
     ///
@@ -112,7 +114,7 @@ impl<T> OneOrMore<T> {
     ///     .collect();
     ///
     /// assert_eq!(uppercased, "BEF");
-    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     pub fn into_vec(self) -> Vec<T> {
         let mut vec = Vec::with_capacity(self.tail().len() + 1);
@@ -129,7 +131,8 @@ impl<T> OneOrMore<T> {
     /// # Examples
     ///
     /// ```
-    /// use manger::{OneOrMore, Consumable};
+    /// use manger::Consumable;
+    /// use manger::common::OneOrMore;
     ///
     /// let (items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
     ///
@@ -140,7 +143,7 @@ impl<T> OneOrMore<T> {
     ///     .collect();
     ///
     /// assert_eq!(uppercased, "BEF");
-    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     pub fn ref_vec(&self) -> Vec<&T> {
         let mut vec = Vec::with_capacity(self.tail().len() + 1);
@@ -157,7 +160,8 @@ impl<T> OneOrMore<T> {
     /// # Examples
     ///
     /// ```
-    /// use manger::{OneOrMore, Consumable};
+    /// use manger::Consumable;
+    /// use manger::common::OneOrMore;
     ///
     /// let (mut items, _) = <OneOrMore<char>>::consume_from("aBcdEFg")?;
     ///
@@ -170,7 +174,7 @@ impl<T> OneOrMore<T> {
     /// let lowercased: String = items.into_iter().collect();
     ///
     /// assert_eq!(lowercased, "abcdefg");
-    /// # Ok::<(), manger::error::ConsumeError>(())
+    /// # Ok::<(), manger::ConsumeError>(())
     /// ```
     pub fn mut_vec(&mut self) -> Vec<&mut T> {
         let mut vec = Vec::with_capacity(self.tail().len() + 1);

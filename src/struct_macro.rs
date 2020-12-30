@@ -8,7 +8,7 @@
 ///
 /// #[derive(PartialEq, Debug)]
 /// struct Sum(i32);
-/// consume_stuct! (
+/// consume_struct! (
 ///     Sum => [
 ///         // Now a list of sequential instruction
 ///         //
@@ -21,7 +21,7 @@
 ///         // an extra condition for consuming. Therefore, if we could have suffixed
 ///         // `{ |data| data >= 5 }`, we would require the `num_of_bananas` to be at
 ///         // least 5.
-///         left_hand: i32;
+///         left_hand: i32,
 ///
 ///         // Consuming arbitrary data from a certain type looks like `: TYPE`
 ///         //
@@ -53,7 +53,7 @@
 ///         //
 ///         // Since `Sum` takes a (i32) we have to fill such a data structure.
 ///         (left_hand + right_hand)
-///     ],
+///     ]
 /// );
 ///
 /// // Now we can consume `Sum` as normal.
@@ -63,7 +63,7 @@
 /// let (sum, _) = Sum::consume_from(source)?;
 ///
 /// assert_eq!(sum, Sum(-5));
-/// # Ok::<(), manger::error::ConsumeError>(())
+/// # Ok::<(), manger::ConsumeError>(())
 /// ```
 ///
 /// # Syntax
@@ -115,7 +115,7 @@ macro_rules! consume_struct {
             $( ( $( $prop:expr ),* ) )?
         ] ) => {
         impl $crate::Consumable for $struct_name {
-            fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
+            fn consume_from(source: &str) -> Result<(Self, &str), $crate::ConsumeError> {
                 let mut unconsumed = source;
                 let mut offset = 0;
 
@@ -130,8 +130,8 @@ macro_rules! consume_struct {
                                         Ok((item, by))
                                     } else {
                                         Err(
-                                            $crate::error::ConsumeError::new_with(
-                                                $crate::error::ConsumeErrorType::InvalidValue { index: offset }
+                                            $crate::ConsumeError::new_with(
+                                                $crate::ConsumeErrorType::InvalidValue { index: offset }
                                             )
                                         )
                                     }

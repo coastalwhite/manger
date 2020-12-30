@@ -1,5 +1,5 @@
-use crate::error::ConsumeError;
 use crate::Consumable;
+use crate::ConsumeError;
 
 impl<T: Consumable> Consumable for Option<T> {
     fn consume_from(source: &str) -> Result<(Option<T>, &str), ConsumeError> {

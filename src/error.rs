@@ -77,7 +77,7 @@ impl ConsumeError {
     ///             InsufficientTokens { index: 5 }
     ///         ]
     ///     ).offset(2),
-    ///     ConsumeErrorType::new_from(
+    ///     ConsumeError::new_from(
     ///         vec![
     ///             InvalidValue { index: 2 },
     ///             InsufficientTokens { index: 7 }

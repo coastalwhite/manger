@@ -32,7 +32,7 @@
 ///             // Note: Optionally, we can suffix a type with `{ Fn(data) -> bool }` to add
 ///             // an extra condition for consuming. Therefore, if we would have wrote
 ///             // `: char { |c| c.is_whitespace() }`, it would have had the same behaviour.
-///             : manger::chars::Whitespace,
+///             : manger::common::Whitespace,
 ///
 ///             // Saving data looks as such `KEY: TYPE`
 ///             //
@@ -82,7 +82,7 @@
 /// # let source = "a grape box 2";
 /// # let (how_many_fruits, _) = <HowManyFruits>::consume_from(source)?;
 /// # assert_eq!(how_many_fruits, HowManyFruits::Unknown);
-/// # Ok::<(), manger::error::ConsumeError>(())
+/// # Ok::<(), manger::ConsumeError>(())
 /// ```
 ///
 /// # Syntax
@@ -147,8 +147,8 @@ macro_rules! consume_enum {
         }
     ) => {
         impl $crate::Consumable for $enum_name {
-            fn consume_from(source: &str) -> Result<(Self, &str), $crate::error::ConsumeError> {
-                let mut error = $crate::error::ConsumeError::new();
+            fn consume_from(source: &str) -> Result<(Self, &str), $crate::ConsumeError> {
+                let mut error = $crate::ConsumeError::new();
 
                 $(
                     #[allow(unconditional_recursion)]
@@ -166,7 +166,7 @@ macro_rules! consume_enum {
                                             if ($cons_condition)(item) {
                                                 Ok((item, unconsumed))
                                             } else {
-                                                Err($crate::error::ConsumeErrorType::InvalidValue { index: offset })
+                                                Err($crate::ConsumeErrorType::InvalidValue { index: offset })
                                             }
                                         }
                                     )

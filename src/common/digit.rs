@@ -17,8 +17,7 @@ use crate::consume_enum;
 ///     Digit::consume_from("2")?.0,
 ///     Digit::Two
 /// );
-///
-/// # Ok(())
+/// # Ok::<(), manger::ConsumeError>(())
 /// ```
 #[derive(Debug, PartialEq)]
 pub enum Digit {

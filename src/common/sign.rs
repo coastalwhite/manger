@@ -8,25 +8,24 @@ use crate::consume_enum;
 /// # Examples
 ///
 /// ```
-/// use manger::ConsumeSource;
+/// use manger::Consumable;
 /// use manger::common::Sign;
 ///
 /// assert_eq!(
-///     "42".consume::<Sign>?,
+///     Sign::consume_from("42")?.0,
 ///     Sign::Positive
 /// );
 ///     
 /// assert_eq!(
-///     "-1".consume::<Sign>?,
-///     Sign::Positive
+///     Sign::consume_from("-1")?.0,
+///     Sign::Negative
 /// );
 ///
 /// assert_eq!(
-///     "+a".consume::<Sign>?,
+///     Sign::consume_from("+a")?.0,
 ///     Sign::Positive
 /// );
-///
-/// # Ok(())
+/// # Ok::<(), manger::ConsumeError>(())
 /// ```
 #[derive(Debug, PartialEq)]
 pub enum Sign {
