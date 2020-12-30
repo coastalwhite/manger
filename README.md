@@ -104,7 +104,6 @@ let sum: i32 = encased_integers
     .sum();
 
 assert_eq!(sum, 4);
-# Ok::<(), manger::ConsumeError>(())
 ```
 
 #### OneOrMore
@@ -137,7 +136,6 @@ let product: i32 = encased_integers
     .product();
 
 assert_eq!(product, -60);
-# Ok::<(), manger::ConsumeError>(())
 ```
 
 ### Optional value
