@@ -1,6 +1,9 @@
-{{badges}}
+![GitHub last commit](https://img.shields.io/github/last-commit/coastalwhite/manger?style=for-the-badge)
+![GitHub branch checks state](https://img.shields.io/github/checks-status/coastalwhite/manger/main?style=for-the-badge)
+![GitHub Repo stars](https://img.shields.io/github/stars/coastalwhite/manger?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/coastalwhite/manger?style=for-the-badge)
 
-# {{crate}}
+# Manger
 
 {{readme}}
 

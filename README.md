@@ -1,7 +1,9 @@
-[![Workflow Status](https://github.com/coastalwhite/manger/workflows/main/badge.svg)](https://github.com/coastalwhite/manger/actions?query=workflow%3A%22main%22)
-![Maintenance](https://img.shields.io/badge/maintenance-activly--developed-brightgreen.svg)
+![GitHub last commit](https://img.shields.io/github/last-commit/coastalwhite/manger?style=for-the-badge)
+![GitHub branch checks state](https://img.shields.io/github/checks-status/coastalwhite/manger/main?style=for-the-badge)
+![GitHub Repo stars](https://img.shields.io/github/stars/coastalwhite/manger?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/coastalwhite/manger?style=for-the-badge)
 
-# manger
+# Manger
 
 ## A performant, low-level, lightweight and intuitive combinatoric parser library.
 
@@ -94,7 +96,7 @@ let source = "[3][-4][5]";
 
 let (encased_integers, _) = <Vec<EncasedInteger>>::consume_from(source)?;
 
-let sum = encased_integers
+let sum: i32 = encased_integers
     .iter()
     .map(|EncasedInteger(value)| value)
     .sum();
@@ -126,8 +128,8 @@ let source = "[3][-4][5]";
 
 let (encased_integers, _) = <OneOrMore<EncasedInteger>>::consume_from(source)?;
 
-let product = encased_integers
-    .iter()
+let product: i32 = encased_integers
+    .into_iter()
     .map(|EncasedInteger(value)| value)
     .product();
 
