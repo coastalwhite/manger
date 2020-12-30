@@ -1,19 +1,7 @@
 /// A macro used for defining the way a `enum` should be consumed.
 /// It will implement [`Consumable`][crate::Consumable] for this `enum`.
 ///  
-/// # Note
-///
-/// 1. Although this macro works without importing any __manger__ traits, they will also not be
-/// imported afterwards. Importing traits should still be done if methods of the trait
-/// are supposed to be used afterwards.
-///
-/// 2. This macro assumed that we are in the same module as the `enum` mentioned
-/// was defined. Some undefined behaviour might occur if this macro is called
-/// outside of the module the `enum` was created.
-///
-/// # Syntax
-///
-/// The basic syntax for using this macros looks as follows:
+/// # Examples
 ///
 /// ```
 /// use manger::consume_enum;
@@ -96,6 +84,50 @@
 /// # assert_eq!(how_many_fruits, HowManyFruits::Unknown);
 /// # Ok::<(), manger::error::ConsumeError>(())
 /// ```
+///
+/// # Syntax
+///
+/// The syntax for the macro is not very complicated. Much of the intuition on the Rust primitive
+/// and _std_ types can we reapplied and only a few new concepts have to be applied.
+///
+/// The ENBF syntax is as follows:
+/// > Please note that the syntax ignores interproduction rule
+/// ```enbf
+/// syntax = enum_name, "{",
+///             {(variant_definition, ",")}*,
+///             variant_definition,
+///          "}";
+///
+/// variant_definition = variant_name, "=>", "[",
+///                         {(instruction, ",")}*,
+///                         instruction, ";",
+///                         [ "(", RUST_EXPR*, ")" ], # RUST_EXPR is an arbitrary rust
+///                                                   # expression it can use all the RUST_IDENT
+///                                                   # defined in the previous section.
+///                      "]";
+///
+/// instruction = expr_instruction | type_instruction;
+///
+/// expr_instruction = ">", RUST_EXPR;    # RUST_EXPR is an arbitrary rust expression. It should
+///                                       # return a instance of a type that has the `Consumable`
+///                                       # trait.
+///
+/// type_instruction = [ RUST_IDENT ], ":", RUST_TYPE; # RUST_IDENT is an arbitrary rust identity
+///                                                    # an it will assigned to that property if no
+///                                                    # tuple syntax is defined.
+///                                                    # RUST_TYPE is an arbitrary rust type that
+///                                                    # implements `Consumable`.
+/// ```
+///
+/// # Note
+///
+/// 1. Although this macro works without importing any __manger__ traits, they will also not be
+/// imported afterwards. Importing traits should still be done if methods of the trait
+/// are supposed to be used afterwards.
+///
+/// 2. This macro assumed that we are in the same module as the `enum` mentioned
+/// was defined. Some undefined behaviour might occur if this macro is called
+/// outside of the module the `enum` was created.
 #[macro_export]
 macro_rules! consume_enum {
     (
@@ -371,8 +403,7 @@ mod tests {
             }
         }
 
-        use crate::chars::Whitespace;
-        use crate::OneOrMore;
+        use crate::common::{OneOrMore, Whitespace};
 
         consume_enum!(
             Expression {
@@ -441,27 +472,6 @@ mod tests {
             );
 
             assert_eq!(Expression::consume_from("+ 5 3").unwrap().0.get_value(), 8);
-        }
-
-        #[test]
-        fn test_errors() {
-            use crate::error::ConsumeError;
-            use crate::error::ConsumeErrorType::*;
-
-            assert_eq!(
-                Expression::consume_from("*x"),
-                Err(ConsumeError::new_from(vec![
-                    InvalidValue { index: 1 },
-                    UnexpectedToken {
-                        index: 0,
-                        token: '*'
-                    },
-                    UnexpectedToken {
-                        index: 0,
-                        token: '*'
-                    }
-                ]))
-            );
         }
 
         #[test]

@@ -19,7 +19,54 @@
 #[doc(inline)]
 pub use error::{ConsumeError, ConsumeErrorType};
 
-/// Trait used to do efficient parsing.
+/// Trait that defines whether a trait can be interpretted for a `source` string or not. It is the
+/// trait that defines most behaviour for [manger][crate].
+///
+/// [`Consumable`] allows for taking a part of the start of a `source` string and turn it into a
+/// instance of `Self` and the unconsumed part of the `source`.
+///
+/// # Implementation
+///
+/// Most of the implementations for this trait can be done with the [`consume_struct`] or
+/// [`consume_enum`]. It is also the preferred way to implement [`Consumable`] for most types since
+/// it handles error handling properly as well.
+///
+/// ## Custom implementations
+///
+/// This trait can be implemented for types by implementing the
+/// [`consume_from`][Consumable::consume_from] function. The
+/// [`consume_from`][Consumable::consume_from] function takes a `source` string and outputs the
+/// instance of `Self` and the unconsumed part of the `source` or will return how the consuming
+/// failed.
+///
+/// It is highly suggested that the implementation of consume_from takes into account
+/// [utf-8](https://en.wikipedia.org/wiki/UTF-8), since most functions in [manger][crate] work with
+/// the [utf-8](https://en.wikipedia.org/wiki/UTF-8) standard. This can be more easily done crates
+/// like [utf8-slice][utf8_slice], which allows for using utf-8 character indicices in slices
+/// instead of using byte indices.
+///
+/// # Examples
+///
+/// ```
+/// use manger::{ Consumable, consume_struct };
+///
+/// let source = "[3][4][-5]";
+///
+/// struct EncasedInteger(i32);
+/// consume_struct!(
+///     EncasedInteger => [
+///         > '[',
+///         value: i32,
+///         > ']';
+///         (value)
+///     ]
+/// );
+///
+/// let product: i32 =  i32::consume_iter(source)
+///     .product();
+///
+/// assert_eq!(product, -60);
+/// ```
 pub trait Consumable: Sized {
     /// Attempt consume from `source` to form an item of `Self`. When consuming is
     /// succesful, it returns the item along with the unconsumed part of the source.
@@ -28,7 +75,7 @@ pub trait Consumable: Sized {
     /// This is the core function to implement when implementing the
     /// [`Consumable`](#) trait.
     ///
-    /// # Implemention note
+    /// # Implementation note
     ///
     /// It is highly recommended to take into account UTF-8 characters. This is
     /// reasonably easy with `.chars()` on `&str` or with the crate
@@ -119,9 +166,6 @@ pub trait Consumable: Sized {
     }
 }
 
-/// Consume one or more with a delimiter between elements
-pub type MultipleWithDelimiter<T, D> = (Vec<(T, D)>, T);
-
 /// Trait which allows for consuming of instances and literals from a string.
 /// This trait should be mostly used for types with a bijection to a string representation,
 /// which includes the `char` and `&str`. This does not include floating points, because
@@ -138,7 +182,7 @@ pub trait SelfConsumable {
     ///
     /// This is the core function implement when implementing [`SelfConsumable`](#).
     ///
-    /// # Implemention note
+    /// # Implementation note
     ///
     /// It is highly recommended to take into account UTF-8 characters. This is
     /// reasonably easy with `.chars()` on `&str` or with the crate

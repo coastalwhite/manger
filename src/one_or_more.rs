@@ -11,10 +11,8 @@ use crate::{Consumable, ConsumeError};
 /// # Note
 ///
 /// While `OneOrMore` is not iterable, the
-/// [`into_iter`][crate::OneOrMore::into_iter],
-/// [`into_vec`][crate::OneOrMore::into_vec],
-/// [`ref_vec`][crate::OneOrMore::ref_vec] and
-/// [`mut_vec`][crate::OneOrMore::mut_vec]
+/// [`into_iter`][OneOrMore::into_iter], [`into_vec`][OneOrMore::into_vec],
+/// [`ref_vec`][OneOrMore::ref_vec] and [`mut_vec`][OneOrMore::mut_vec]
 /// can be used to iterate/create iterators over the items contained within the structs
 /// and do further data manipulation.
 ///
@@ -194,7 +192,7 @@ impl<T: Consumable> IntoIterator for OneOrMore<T> {
 impl<T: Consumable> Consumable for OneOrMore<T> {
     fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
         let (head, unconsumed) = T::consume_from(s)?;
-        let (tail, unconsumed) = <Vec<T>>::consume_from(unconsumed)?;
+        let (tail, unconsumed) = <Vec<T>>::consume_from(unconsumed).unwrap();
 
         Ok((OneOrMore { head, tail }, unconsumed))
     }

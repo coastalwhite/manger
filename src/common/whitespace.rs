@@ -1,6 +1,6 @@
 /// Struct representing a Whitespace utf-8 character.
 ///
-/// Will consume all characters which return true on [`char::is_whitespace`][char].
+/// Will consume all characters which return true on [`char::is_whitespace`].
 #[derive(Debug, PartialEq)]
 pub struct Whitespace;
 
