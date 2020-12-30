@@ -10,13 +10,8 @@ homepage = "https://github.com/coastalwhite/manger"
 license = "MIT"
 description = "A performant, low-level, lightweight and intuitive combinatoric parser library"
 
-[badges.github]
-repository = "coastalwhite/manger"
-
 [badges.maintenance]
 status = "actively-developed"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 utf8_slice = "^1.0.0"
