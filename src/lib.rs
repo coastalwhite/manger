@@ -371,6 +371,28 @@ pub trait Consumable: Sized {
             unconsumed: source,
         }
     }
+
+    /// Parse an item of Self.
+    ///
+    /// Attempt to consume the full source and form a item of Self from it. If it succeeds it will
+    /// return that item. If it fails it will return a error.
+    ///
+    /// It is very similar to [std::str::parse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::Consumable;
+    ///
+    /// let source = "-42";
+    /// let value = i32::consume_all(source)?;
+    ///
+    /// assert_eq!(value, -42);
+    /// # Ok::<(), manger::ConsumeError>(())
+    /// ```
+    fn consume_all(source: &str) -> Result<Self, ConsumeError> {
+        <(Self, crate::common::End)>::consume_from(source).map(|((item, _), _)| item)
+    }
 }
 
 /// Trait which allows for consuming of instances and literals from a string.
@@ -625,6 +647,70 @@ where
         self.unconsumed = unconsumed;
 
         item_option
+    }
+}
+
+/// A wrapper to have default [FromStr][std::str::FromStr] behaviour.
+///
+/// # Examples
+/// ```
+/// use manger::{ consume_struct, Consumable, Parser };
+/// use std::str::FromStr;
+///
+/// struct EncasedInteger(i32);
+/// consume_struct!(
+///     EncasedInteger => [
+///         > '(',
+///         value: i32,
+///         > ')';
+///         (value)
+///     ]
+/// );
+///
+/// let parser = "(-42)".parse::<Parser<EncasedInteger>>()?;
+/// let EncasedInteger(num) = parser.unwrap();
+///
+/// assert_eq!(num, -42);
+/// # Ok::<(), manger::ConsumeError>(())
+/// ```
+#[derive(Debug)]
+pub struct Parser<T>
+where
+    T: Consumable + Sized,
+{
+    value: T,
+}
+
+impl<T> std::str::FromStr for Parser<T>
+where
+    T: Consumable + Sized,
+{
+    type Err = ConsumeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Parser {
+            value: <T>::consume_all(s)?,
+        })
+    }
+}
+
+impl<T> Parser<T>
+where
+    T: Consumable + Sized,
+{
+    /// Get a immutable reference to the parsed value.
+    pub fn get_ref(&self) -> &T {
+        &self.value
+    }
+
+    /// Get a mutable reference to the parsed value.
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    /// Unwrap the parser to fetch the parsed value.
+    pub fn unwrap(self) -> T {
+        self.value
     }
 }
 
