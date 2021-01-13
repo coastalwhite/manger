@@ -371,6 +371,28 @@ pub trait Consumable: Sized {
             unconsumed: source,
         }
     }
+
+    /// Parse an item of Self.
+    ///
+    /// Attempt to consume the full source and form a item of Self from it. If it succeeds it will
+    /// return that item. If it fails it will return a error.
+    ///
+    /// It is very similar to [std::str::parse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use manger::Consumable;
+    ///
+    /// let source = "-42";
+    /// let value = i32::consume_all(source)?;
+    ///
+    /// assert_eq!(value, -42);
+    /// # Ok::<(), manger::ConsumeError>(())
+    /// ```
+    fn consume_all(source: &str) -> Result<Self, ConsumeError> {
+        <(Self, crate::common::End)>::consume_from(source).map(|((item, _), _)| item)
+    }
 }
 
 /// Trait which allows for consuming of instances and literals from a string.

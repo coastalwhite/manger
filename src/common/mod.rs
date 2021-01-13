@@ -15,8 +15,12 @@ pub use digit::Digit;
 #[doc(inline)]
 pub use whitespace::Whitespace;
 
+#[doc(inline)]
+pub use end::End;
+
 mod catch_all;
 mod digit;
+mod end;
 mod one_or_more;
 mod sign;
 mod whitespace;
