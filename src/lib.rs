@@ -165,7 +165,7 @@
 //!
 //! Another common pattern seen within combinatoric parsers is recursion. Since rust types need to
 //! have a predefined since, we cannot do direct type recursion and we need to do heap allocation
-//! with the [`Box<T>`][std::box::Box] type from the standard library. We can make a prefixed
+//! with the [`Box<T>`][std::boxed::Box] type from the standard library. We can make a prefixed
 //! math expression parser as followed:
 //!
 //! ```
@@ -206,7 +206,7 @@
 //!
 //! ### Whitespace
 //!
-//! For whitespace we can use the [`manger::common::Whitespace`] struct. This will consume any
+//! For whitespace we can use the [Whitespace][crate::common::Whitespace] struct. This will consume any
 //! utf-8 character that is identified as a whitespace character by the [`char::is_whitespace`]
 //! function.
 //!
@@ -223,7 +223,7 @@
 //!
 //! ## Either<L, R>
 //!
-//! You can also use the [`Either<L, R>`][either::Either] type to represent the either
+//! You can also use the [`Either<L, R>`][::either::Either] type to represent the either
 //! relationship. This option is preferred if we do not care about which option is selected.
 
 #[doc(inline)]
@@ -377,7 +377,7 @@ pub trait Consumable: Sized {
     /// Attempt to consume the full source and form a item of Self from it. If it succeeds it will
     /// return that item. If it fails it will return a error.
     ///
-    /// It is very similar to [std::str::parse].
+    /// It is very similar to [parse][str::parse].
     ///
     /// # Examples
     ///
