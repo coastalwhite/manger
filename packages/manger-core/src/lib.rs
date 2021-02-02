@@ -724,3 +724,17 @@ mod impls;
 mod integers;
 mod strs;
 mod struct_macro;
+pub mod macros;
+
+use macros::item::SequenceItem;
+
+#[proc_macro]
+pub fn sequence_item(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let sequence_item = syn::parse_macro_input!(input as SequenceItem);
+
+    match sequence_item {
+        SequenceItem::Literal(_lit) => quote::quote! { println!("Literal!"); },
+        SequenceItem::Typed(_ident_opt, _ty) => quote::quote! { println!("Typed!"); },
+        SequenceItem::Group(_g) => quote::quote! { println!("Group!"); },
+    }.into()
+}

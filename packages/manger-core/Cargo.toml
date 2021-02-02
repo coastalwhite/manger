@@ -10,15 +10,10 @@ homepage = "https://github.com/coastalwhite/manger"
 license = "MIT"
 description = "A performant, low-level, lightweight and intuitive combinatoric parser library"
 
-[workspace]
-members = [
-    'packages/manger-core',
-    'packages/manger-macro'
-]
-
 [badges.maintenance]
 status = "actively-developed"
 
 [dependencies]
-manger-core = { version = "0.1.1", path = "packages/manger-core" }
-manger-macro = { version = "0.1.1", path = "packages/manger-macro" }
+utf8_slice = "^1.0.0"
+either = "1.6.1"
+thiserror = "1.0"
