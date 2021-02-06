@@ -8,7 +8,7 @@ edition = "2018"
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0", features = ["extra-traits"] }
+syn = { version = "1.0", features = ["full", "extra-traits"] }
 quote = "1.0"
 trybuild = "1.0"
 manger = "0.1.1"

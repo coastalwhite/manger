@@ -1,8 +1,8 @@
 use crate::chars;
-use crate::common::{Digit, OneOrMore, Sign};
-use crate::error::ConsumeError;
-use crate::error::ConsumeErrorType::*;
-use crate::{consume_enum, Consumable};
+use crate::{Digit, OneOrMore, Sign};
+use manger_core::error::ConsumeError;
+use manger_core::error::ConsumeErrorType::*;
+use manger_core::{consume_enum, Consumable};
 use std::str::FromStr;
 
 enum FloatNumberStruct {

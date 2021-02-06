@@ -1,5 +1,5 @@
 [package]
-name = "manger"
+name = "manger-core"
 version = "0.1.1"
 authors = ["Gijs Burghoorn <me@gburghoorn.com>"]
 edition = "2018"

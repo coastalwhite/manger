@@ -13,7 +13,8 @@ description = "A performant, low-level, lightweight and intuitive combinatoric p
 [workspace]
 members = [
     'packages/manger-core',
-    'packages/manger-macro'
+    'packages/manger-macro',
+    'packages/manger-std',
 ]
 
 [badges.maintenance]
@@ -21,4 +22,5 @@ status = "actively-developed"
 
 [dependencies]
 manger-core = { version = "0.1.1", path = "packages/manger-core" }
-manger-macro = { version = "0.1.1", path = "packages/manger-macro" }
+manger-macro = { version = "0.1.0", path = "packages/manger-macro" }
+manger-std = { version = "0.1.0", path = "packages/manger-std" }
