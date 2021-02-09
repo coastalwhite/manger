@@ -1,16 +1,16 @@
-use crate::common::{Digit, OneOrMore, Sign};
+use super::{Digit, OneOrMore, Sign};
 use crate::{ConsumeError, ConsumeErrorType};
 
 macro_rules! impl_consume_uint {
-    ( $type: ty, $test_name:ident$(, $plus_maxvalue:literal )? ) => {
+    ( $type:ty, $test_name:ident$(, $plus_maxvalue:literal )? ) => {
         impl $crate::Consumable for $type {
             fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
-                let (digits, unconsumed) = OneOrMore::<Digit>::consume_from(s)?;
+                let (digits, unconsumed) = <OneOrMore<Digit>>::consume_from(s)?;
 
                 let mut num: $type = 0;
 
-                for digit in digits.into_iter() {
-                    let digit = digit.value();
+                for digit in digits.into_vec().into_iter() {
+                    let digit = digit.into();
 
                     num = num
                         .checked_mul(10)
@@ -60,17 +60,18 @@ macro_rules! impl_consume_uint {
 }
 
 macro_rules! impl_consume_int {
-    ( $type: ty, $test_name:ident$(, $plus_maxvalue:literal, $min_minvalue:literal )? ) => {
+    ( $type:ty, $test_name:ident$(, $plus_maxvalue:literal, $min_minvalue:literal )? ) => {
         impl $crate::Consumable for $type {
             fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
                 let (sign, unconsumed) = Sign::consume_from(s)?;
-                let (digits, unconsumed) = OneOrMore::<Digit>::consume_from(unconsumed)?;
+                let (digits, unconsumed) = <OneOrMore<Digit>>::consume_from(unconsumed)?;
 
                 let mut num: $type = 0;
-                let normal = sign.normal::<$type>();
+                let normal: $type = sign.into();
 
-                for digit in digits.into_iter() {
-                    let digit = normal * digit.value::<$type>();
+                for digit in digits.into_vec().into_iter() {
+                    let digit: $type = digit.into();
+                    let digit = normal * digit;
 
                     num = num
                         .checked_mul(10)

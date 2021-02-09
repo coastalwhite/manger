@@ -1,17 +1,21 @@
 use syn::parse::{Parse, ParseStream, Result};
 
-use typed::Typed;
 use group::Group;
+use literal::Literal;
+use typed::Typed;
+
+use crate::ToTokenstream;
 
 #[derive(Debug)]
 pub enum SequenceItem {
-    Literal(syn::Lit),
+    Literal(Literal),
     Typed(Typed),
     Group(Group),
 }
 
-mod group;
-mod typed;
+pub mod group;
+pub mod literal;
+pub mod typed;
 
 impl Parse for SequenceItem {
     fn parse(stream: ParseStream) -> Result<Self> {
@@ -20,7 +24,7 @@ impl Parse for SequenceItem {
         }
 
         // Try Literal
-        if let Ok(lit) = stream.parse::<syn::Lit>() {
+        if let Ok(lit) = stream.parse::<Literal>() {
             return Ok(SequenceItem::Literal(lit));
         }
 
@@ -35,5 +39,17 @@ impl Parse for SequenceItem {
         }
 
         Err(stream.error("Expected either a literal, a typed item or a group. Found none of those"))
+    }
+}
+
+impl ToTokenstream for SequenceItem {
+    fn to_tokenstream(&self) -> proc_macro2::TokenStream {
+        use SequenceItem::*;
+
+        match self {
+            Typed(typed) => typed.to_tokenstream(),
+            Literal(lit) => lit.to_tokenstream(),
+            Group(group) => group.to_tokenstream(),
+        }
     }
 }

@@ -2,7 +2,9 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::{braced, parenthesized, Token};
 
-use super::SequenceItem;
+
+use crate::sequence_item::SequenceItem;
+use crate::ToTokenstream;
 
 mod options;
 
@@ -26,8 +28,9 @@ impl Parse for Group {
         }
 
         // Parse the options if they are available
-        let options_content;
-        let options = if let Ok(_) = (|ref mut cnt| Ok(braced![cnt in stream]))(options_content) {
+        let options = if stream.peek(syn::token::Brace) {
+            let options_content;
+            braced!(options_content in stream);
             <Punctuated<options::GroupOption, Token![,]>>::parse_terminated(&options_content)?
                 .into_iter()
                 .collect()
@@ -46,5 +49,14 @@ impl Parse for Group {
             options,
             sequence_items,
         })
+    }
+}
+
+impl ToTokenstream for Group {
+    fn to_tokenstream(&self) -> proc_macro2::TokenStream {
+        unimplemented!();
+
+        //TODO: Options
+        //TODO: Impl this
     }
 }

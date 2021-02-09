@@ -9,6 +9,22 @@ proc-macro = true
 
 [dependencies]
 syn = { version = "1.0", features = ["full", "extra-traits"] }
+proc-macro2 = "1.0.0"
 quote = "1.0"
 trybuild = "1.0"
-manger = "0.1.1"
+manger-core = { version = "0.1.1", path = "../manger-core" }
+
+[dev-dependencies]
+manger-std = { version = "0.1.0", path = "../manger-std" }
+
+[[test]]
+name = "enum"
+path = "tests/enums.rs"
+
+[[test]]
+name = "encased_integer"
+path = "tests/encased_integer.rs"
+
+[[test]]
+name = "generics"
+path = "tests/generics.rs"

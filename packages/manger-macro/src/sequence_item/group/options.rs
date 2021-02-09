@@ -1,9 +1,10 @@
 use syn::parse::{Parse, ParseStream, Result};
 use syn::Token;
 
+#[derive(Debug)]
 pub struct GroupOptions {
-    ignore_inner_whitespace: true,
-    ignore_outer_whitespace: tru
+    ignore_inner_whitespace: bool,
+    ignore_outer_whitespace: bool
 }
 
 #[derive(Debug)]

@@ -3,40 +3,6 @@
 //! This module contains common ASCII characters,
 //! latin alphabetic letters and decimals numeric digits.
 
-use crate::error::ConsumeError;
-use crate::error::ConsumeErrorType::*;
-use crate::{Consumable, SelfConsumable};
-
-// Trait implementations for `char`
-// --------------------------------
-
-impl SelfConsumable for char {
-    fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError> {
-        source.chars().next().map_or(
-            Err(ConsumeError::new_with(InsufficientTokens { index: 0 })),
-            |token| {
-                if token == *item {
-                    Ok(utf8_slice::from(source, 1))
-                } else {
-                    Err(ConsumeError::new_with(UnexpectedToken { index: 0, token }))
-                }
-            },
-        )
-    }
-}
-
-impl Consumable for char {
-    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
-        if let Some(token) = s.chars().next() {
-            Ok((token, utf8_slice::from(s, 1)))
-        } else {
-            Err(ConsumeError::new_with(InsufficientTokens { index: 0 }))
-        }
-    }
-}
-
-// --------------------------------
-
 macro_rules! declare_ascii {
     ( $( $struct_name:ident => $char:literal ),+ ) => {
         $(
@@ -56,10 +22,10 @@ macro_rules! declare_ascii {
                 }
             }
 
-            crate::consume_struct!(
-                $struct_name => [
-                    > $char;
-                ]
+            manger_macro::mangez!(
+                $struct_name { 
+                    [ $char ]
+                }
             );
         )+
     };
@@ -162,10 +128,10 @@ pub mod alpha {
                     }
                 }
 
-                crate::consume_enum!(
+                manger_macro::mangez!(
                     $letter {
-                        Lowercase => [ : lower::$letter; ],
-                        Uppercase => [ : upper::$letter; ]
+                        Lowercase { [ : lower::$letter ] },
+                        Uppercase { [ : upper::$letter ] }
                     }
                 );
             )*

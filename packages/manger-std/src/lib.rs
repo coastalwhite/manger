@@ -1,6 +1,7 @@
 //! Types for common structures within consuming.
 
-use manger_core::{Consumable, ConsumeError, ConsumeErrorType, consume_struct, consume_enum};
+use manger_core::{Consumable, ConsumeError, ConsumeErrorType};
+use manger_macro::mangez;
 
 /// End of stream of tokens.
 ///
@@ -50,10 +51,10 @@ impl Consumable for End {
 #[derive(Debug, PartialEq)]
 pub struct CatchAll;
 
-consume_struct!(
-    CatchAll => [
-        > "";
-    ]
+mangez!(
+    CatchAll {
+        [ "" ]
+    }
 );
 
 /// Enum that represents parsing a number sign.
@@ -92,32 +93,30 @@ pub enum Sign {
     Negative,
 }
 
-use crate::chars;
-
 #[derive(Debug, PartialEq)]
 enum PositiveType {
     Plus,
     Empty,
 }
-consume_enum!(
+mangez!(
     PositiveType {
-        Plus => [
-            : chars::Plus;
-        ],
-        Empty => [
-            : CatchAll;
-        ]
+        Plus {
+            [ : chars::Plus ]
+        },
+        Empty {
+            [ : CatchAll ]
+        }
     }
 );
 
-consume_enum!(
+mangez!(
     Sign {
-        Negative => [
-            : chars::Hyphen;
-        ],
-        Positive => [
-            : PositiveType;
-        ]
+        Negative {
+            ['-']
+        },
+        Positive {
+            [: PositiveType]
+        }
     }
 );
 
@@ -192,10 +191,12 @@ from_sign_float!(f32, f64);
 #[derive(Debug, PartialEq)]
 pub struct Whitespace;
 
-crate::consume_struct!(
-    Whitespace => [
-        : char { |token: char| token.is_whitespace() };
-    ]
+mangez!(
+    Whitespace {
+        [
+            : char { |token: char| token.is_whitespace() }
+        ]
+    }
 );
 
 mod digit;
@@ -205,5 +206,3 @@ mod one_or_more;
 pub use one_or_more::OneOrMore;
 
 pub mod chars;
-pub mod integers;
-pub mod floats;

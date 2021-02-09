@@ -721,3 +721,4 @@ mod error;
 mod impls;
 mod strs;
 mod struct_macro;
+mod nums;
