@@ -39,14 +39,14 @@ macro_rules! impl_consume_uint {
 
             assert_eq!(
                 <$type>::consume_from("").unwrap_err(),
-                ConsumeError::new_from(
-                        vec![InsufficientTokens { index: 0 }; 10]
+                ConsumeError::new_with(
+                        InsufficientTokens { index: 0 }
                     )
             );
             assert_eq!(
                 <$type>::consume_from("-123").unwrap_err(),
-                ConsumeError::new_from(
-                    vec![UnexpectedToken { index: 0, token: '-' }; 10]
+                ConsumeError::new_with(
+                    UnexpectedToken { index: 0, token: '-' }
                 )
             );
             $(
@@ -104,14 +104,14 @@ macro_rules! impl_consume_int {
 
                 assert_eq!(
                     <$type>::consume_from("").unwrap_err(),
-                    ConsumeError::new_from(
-                        vec![InsufficientTokens { index: 0 }; 10]
+                    ConsumeError::new_with(
+                        InsufficientTokens { index: 0 }
                     )
                 );
                 assert_eq!(
                     <$type>::consume_from("a123").unwrap_err(),
-                    ConsumeError::new_from(
-                        vec![UnexpectedToken { index: 0, token: 'a' }; 10]
+                    ConsumeError::new_with(
+                        UnexpectedToken { index: 0, token: 'a' }
                     )
                 );
                 $(

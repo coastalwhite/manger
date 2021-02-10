@@ -56,13 +56,13 @@ impl Consumable for Sign {
     fn consume_from(source: &str) -> Result<(Self, &str), ConsumeError> {
         use Sign::*;
 
-        Ok((
+        Ok(
             match source.chars().next() {
-                Some('-') => Negative,
-                _ => Positive,
-            },
-            utf8_slice::from(source, 1),
-        ))
+                Some('-') => (Negative, utf8_slice::from(source, 1)),
+                Some('+') => (Positive, utf8_slice::from(source, 1)),
+                _ => (Positive, source),
+            }
+        )
     }
 }
 

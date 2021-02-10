@@ -11,19 +11,19 @@ use manger_macro::mangez;
 /// # Examples
 ///
 /// ```
-/// use manger::{consume_struct, Consumable};
-/// use manger::common;
+/// use manger::{mangez, Consumable};
+/// use manger::std::End;
 ///
 /// #[derive(PartialEq, Debug)]
 /// struct EncasedInteger(i32);
 /// consume_struct!(
-///     EncasedInteger => [
-///         > '(',
-///         value: i32,
-///         > ')',
-///         : common::End;
+///     EncasedInteger {
+///         [
+///             '(', value: i32, ')',
+///             : common::End
+///         ];
 ///         (value)
-///     ]
+///     }
 /// );
 ///
 /// assert!(EncasedInteger::consume_from("(42)").is_ok());
@@ -66,7 +66,7 @@ mangez!(
 ///
 /// ```
 /// use manger::Consumable;
-/// use manger::common::Sign;
+/// use manger::std::Sign;
 ///
 /// assert_eq!(
 ///     Sign::consume_from("42")?.0,
@@ -206,3 +206,6 @@ mod one_or_more;
 pub use one_or_more::OneOrMore;
 
 pub mod chars;
+
+mod parser;
+pub use parser::Parser;
