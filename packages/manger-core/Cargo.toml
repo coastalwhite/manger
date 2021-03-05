@@ -14,6 +14,7 @@ description = "A performant, low-level, lightweight and intuitive combinatoric p
 status = "actively-developed"
 
 [dependencies]
+az = "1.1.0"
 utf8_slice = "^1.0.0"
 either = "1.6.1"
 thiserror = "1.0"
