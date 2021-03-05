@@ -5,12 +5,14 @@
 
 # Manger
 
+<!-- cargo-sync-readme start -->
+
 # A performant, low-level, lightweight and intuitive combinatoric parser library.
 
 Manger allows for translation of the intuition developed for _Rust_'s primitive and standard
 library types into your intuition for using this library. Most of the behaviour is defined with
-the `Consumable` trait, which can be easily implemented using the `consume_struct` and
-`consume_enum` macros.
+the [`Consumable`] trait, which can be easily implemented using the [`consume_struct`] and
+[`consume_enum`] macros.
 
 This library is suited for deterministic regular languages. It is optimally used in addition to
 a predefined syntax. For example, if you have a predefined
@@ -19,8 +21,8 @@ implement the syntax within this crate.
 
 # Getting Started
 
-To get started with implementing `Consumable` on your own traits, I suggest taking a look at
-the `consume_struct` or `consume_enum` documentation. Then you can come back here and look
+To get started with implementing [`Consumable`] on your own traits, I suggest taking a look at
+the [`consume_struct`] or [`consume_enum`] documentation. Then you can come back here and look
 at some common patterns.
 
 ## Common patterns
@@ -36,22 +38,19 @@ ways to do this.
 
 #### Macro's
 
-The first way, and the preferred way, is with the `consume_struct` or `consume_enum` macros
+The first way, and the preferred way, is with the [`consume_struct`] or [`consume_enum`] macros
 where you can present sequential consume instructions. You can see in the following example that
-we are first consuming a `'('`, followed by a [`i32`](https://doc.rust-lang.org/std/primitive.i32.html),
-followed by a closing `')'`.
+we are first consuming a `'('`, followed by a [`i32`], followed by a closing `')'`.
 
 ```rust
-use manger::{ Consumable, consume_struct };
+use manger::{ mangez, Consumable };
 
 struct EncasedInteger(i32);
-consume_struct!(
-    EncasedInteger => [
-        > '(',
-        value: i32,
-        > ')';
+mangez!(
+    EncasedInteger {
+        [ '(', value: i32, ')' ];
         (value)
-    ]
+    }
 );
 ```
 
@@ -61,7 +60,7 @@ Another way to represent the same concept is with the tuple type syntax. This ca
 up to 10 types. Here we are again parsing the same `(i32)` structure.
 
 ```rust
-use manger::chars;
+use manger::std::chars;
 
 type EncasedInteger = (chars::OpenParenthese, i32, chars::CloseParenthese);
 ```
@@ -73,25 +72,22 @@ way to represent repetition. Here there are two easy ways.
 
 #### Vec
 
-The easiest way to do repetition is with the [`Vec<T>`](https://doc.rust-lang.org/std/vec/struct.Vec.html).
-This will consume 0 or
-more instances of type `T`. Ofcourse, the type `T` has have has `Consumable` implemented.
+The easiest way to do repetition is with the [`Vec<T>`][std::vec::Vec]. This will consume 0 or
+more instances of type `T`. Ofcourse, the type `T` has have has [`Consumable`] implemented.
 Here you can see how what that looks like:
 
-> Since [`Vec<T>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) will consume instances of type `T` until it finds a error, it
+> Since [`Vec<T>`][std::vec::Vec] will consume instances of type `T` until it finds a error, it
 can never fail itself. You are therefore safe to unwrap the result.
 
 ```rust
-use manger::{ Consumable, consume_struct };
+use manger::{ mangez, Consumable };
 
 struct EncasedInteger(i32);
-consume_struct!(
-    EncasedInteger => [
-        > '[',
-        value: i32,
-        > ']';
+mangez!(
+    EncasedInteger {
+        [ '[', value: i32, ']' ];
         (value)
-    ]
+    }
 );
 
 let source = "[3][-4][5]";
@@ -108,22 +104,20 @@ assert_eq!(sum, 4);
 
 #### OneOrMore
 
-The other easy way to do repetition is with `OneOrMore<T>`. This allows for
-consuming 1 or more instances of type `T`. And again, type `T` has to have `Consumable`
+The other easy way to do repetition is with [`OneOrMore<T>`][common::OneOrMore]. This allows for
+consuming 1 or more instances of type `T`. And again, type `T` has to have [`Consumable`]
 implemented. Here you can see what that looks like:
 
 ```rust
-use manger::{ Consumable, consume_struct };
-use manger::common::OneOrMore;
+use manger::{ mangez, Consumable };
+use manger::std::OneOrMore;
 
 struct EncasedInteger(i32);
-consume_struct!(
-    EncasedInteger => [
-        > '[',
-        value: i32,
-        > ']';
+mangez!(
+    EncasedInteger {
+        [ '[', value: i32, ']' ];
         (value)
-    ]
+    }
 );
 
 let source = "[3][-4][5]";
@@ -140,24 +134,26 @@ assert_eq!(product, -60);
 
 ### Optional value
 
-To express optional values you can use the [`Option<T>`](https://doc.rust-lang.org/std/option/enum.Option.html) standard rust
+To express optional values you can use the [`Option<T>`][std::option::Option] standard rust
 type. This will consume either 0 or 1 of type `T`.
 
-> Since [`Option<T>`](https://doc.rust-lang.org/std/option/enum.Option.html) will consume a instance of type `T` if it finds no error, it
+> Since [`Option<T>`][std::option::Option] will consume a instance of type `T` if it finds no error, it
 can never fail itself. You are therefore safe to unwrap the result.
 
 ```rust
-use manger::consume_struct;
-use manger::chars;
+use manger::{ mangez, Consumable };
+use manger::std::chars;
 
 struct PossiblyEncasedInteger(i32);
-consume_struct!(
-    PossiblyEncasedInteger => [
-        : Option<chars::OpenParenthese>,
-        value: i32,
-        : Option<chars::CloseParenthese>;
+mangez!(
+    PossiblyEncasedInteger {
+        [
+            : Option<chars::OpenParenthese>,
+            value: i32,
+            : Option<chars::CloseParenthese>
+        ];
         (value)
-    ]
+    }
 );
 ```
 
@@ -165,12 +161,12 @@ consume_struct!(
 
 Another common pattern seen within combinatoric parsers is recursion. Since rust types need to
 have a predefined since, we cannot do direct type recursion and we need to do heap allocation
-with the [`Box<T>`](https://doc.rust-lang.org/std/boxed/struct.Box.html) type from the standard library. We can make a prefixed
+with the [`Box<T>`][std::boxed::Box] type from the standard library. We can make a prefixed
 math expression parser as followed:
 
 ```rust
-use manger::consume_enum;
-use manger::common::{OneOrMore, Whitespace};
+use manger::{ mangez, Consumable };
+use manger::std::{OneOrMore, Whitespace};
 
 enum Expression {
     Times(Box<Expression>, Box<Expression>),
@@ -178,36 +174,40 @@ enum Expression {
     Constant(u32),
 }
 
-consume_enum!(
+mangez!(
     Expression {
-        Times => [
-            > '*',
-            : OneOrMore<Whitespace>,
-            left: Box<Expression>,
-            : OneOrMore<Whitespace>,
-            right: Box<Expression>;
+        Times {
+            [
+                '*',
+                : OneOrMore<Whitespace>,
+                left: Box<Expression>,
+                : OneOrMore<Whitespace>,
+                right: Box<Expression>
+            ];
             (left, right)
-        ],
-        Plus => [
-            > '+',
-            : OneOrMore<Whitespace>,
-            left: Box<Expression>,
-            : OneOrMore<Whitespace>,
-            right: Box<Expression>;
+        },
+        Plus {
+            [
+                '+',
+                : OneOrMore<Whitespace>,
+                left: Box<Expression>,
+                : OneOrMore<Whitespace>,
+                right: Box<Expression>
+            ];
             (left, right)
-        ],
-        Constant => [
-            value: u32;
+        },
+        Constant {
+            [ value: u32 ];
             (value)
-        ]
+        }
     }
 );
 ```
 
 ### Whitespace
 
-For whitespace we can use the `manger::common::Whitespace` struct. This will consume any
-utf-8 character that is identified as a whitespace character by the [`char::is_whitespace`](https://doc.rust-lang.org/std/primitive.char.html#method.is_whitespace)
+For whitespace we can use the [Whitespace][crate::common::Whitespace] struct. This will consume any
+utf-8 character that is identified as a whitespace character by the [`char::is_whitespace`]
 function.
 
 ### Either
@@ -215,16 +215,19 @@ function.
 If two possibilities are present for consuming there are two options to choose from. Both are
 valid in certain scenarios.
 
-#### Macro
+## Macro
 
-Using the `consume_enum` you can create an struct which can be consuming in a number of
+Using the [`consume_enum`] you can create an struct which can be consuming in a number of
 options and you can see which option was selected. If you need to see which of the different
 options was selected, this should be your choice.
 
-#### Either<L, R>
+## Either<L, R>
 
-You can also use the [`Either<L, R>`](https://docs.rs/either/1.6.1/either/enum.Either.html) type to represent the either
+You can also use the [`Either<L, R>`][::either::Either] type to represent the either
 relationship. This option is preferred if we do not care about which option is selected.
+
+
+<!-- cargo-sync-readme end -->
 
 ## Roadmap
 

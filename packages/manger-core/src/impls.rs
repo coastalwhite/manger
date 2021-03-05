@@ -30,6 +30,38 @@ impl<T: Consumable> Consumable for Vec<T> {
     }
 }
 
+// Trait implementations for `char`
+// --------------------------------
+
+use crate::ConsumeErrorType::*;
+use crate::SelfConsumable;
+
+impl SelfConsumable for char {
+    fn consume_item<'a>(source: &'a str, item: &'_ Self) -> Result<&'a str, ConsumeError> {
+        source.chars().next().map_or(
+            Err(ConsumeError::new_with(InsufficientTokens { index: 0 })),
+            |token| {
+                if token == *item {
+                    Ok(utf8_slice::from(source, 1))
+                } else {
+                    Err(ConsumeError::new_with(UnexpectedToken { index: 0, token }))
+                }
+            },
+        )
+    }
+}
+
+impl Consumable for char {
+    fn consume_from(s: &str) -> Result<(Self, &str), ConsumeError> {
+        if let Some(token) = s.chars().next() {
+            Ok((token, utf8_slice::from(s, 1)))
+        } else {
+            Err(ConsumeError::new_with(InsufficientTokens { index: 0 }))
+        }
+    }
+}
+
+// --------------------------------
 use crate::ConsumeSource;
 
 macro_rules! consume_concat {

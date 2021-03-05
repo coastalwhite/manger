@@ -1,4 +1,61 @@
-use crate::consume_enum;
+//! Types for common structures within consuming.
+
+use manger_core::{Consumable, ConsumeError, ConsumeErrorType};
+use manger_macro::mangez;
+
+/// End of stream of tokens.
+///
+/// Will succeed in consumation if the end of string has been reached. Will fail if it has not been
+/// reached.
+///
+/// # Examples
+///
+/// ```
+/// use manger::{mangez, Consumable};
+/// use manger::std::End;
+///
+/// #[derive(PartialEq, Debug)]
+/// struct EncasedInteger(i32);
+/// consume_struct!(
+///     EncasedInteger {
+///         [
+///             '(', value: i32, ')',
+///             : common::End
+///         ];
+///         (value)
+///     }
+/// );
+///
+/// assert!(EncasedInteger::consume_from("(42)").is_ok());
+/// assert!(EncasedInteger::consume_from("(42) some leftover tokens").is_err());
+/// ```
+#[derive(Debug, PartialEq)]
+pub struct End;
+
+impl Consumable for End {
+    fn consume_from(source: &str) -> Result<(Self, &str), ConsumeError> {
+        if source.is_empty() {
+            Ok((End, ""))
+        } else {
+            Err(ConsumeError::new_with(ConsumeErrorType::UnexpectedToken {
+                index: 0,
+                token: source.chars().next().unwrap(),
+            }))
+        }
+    }
+}
+
+/// A catch-all clause for consuming.
+///
+/// Most often used with Enums and with the `Either<L, R>` struct.
+#[derive(Debug, PartialEq)]
+pub struct CatchAll;
+
+mangez!(
+    CatchAll {
+        [ "" ]
+    }
+);
 
 /// Enum that represents parsing a number sign.
 ///
@@ -9,7 +66,7 @@ use crate::consume_enum;
 ///
 /// ```
 /// use manger::Consumable;
-/// use manger::common::Sign;
+/// use manger::std::Sign;
 ///
 /// assert_eq!(
 ///     Sign::consume_from("42")?.0,
@@ -36,33 +93,30 @@ pub enum Sign {
     Negative,
 }
 
-use crate::chars;
-use crate::common;
-
 #[derive(Debug, PartialEq)]
 enum PositiveType {
     Plus,
     Empty,
 }
-consume_enum!(
+mangez!(
     PositiveType {
-        Plus => [
-            : chars::Plus;
-        ],
-        Empty => [
-            : common::CatchAll;
-        ]
+        Plus {
+            [ : chars::Plus ]
+        },
+        Empty {
+            [ : CatchAll ]
+        }
     }
 );
 
-consume_enum!(
+mangez!(
     Sign {
-        Negative => [
-            : chars::Hyphen;
-        ],
-        Positive => [
-            : PositiveType;
-        ]
+        Negative {
+            ['-']
+        },
+        Positive {
+            [: PositiveType]
+        }
     }
 );
 
@@ -130,3 +184,28 @@ macro_rules! from_sign_float {
 
 from_sign_int!(i8, i16, i32, i64, i128, isize);
 from_sign_float!(f32, f64);
+
+/// Struct representing a Whitespace utf-8 character.
+///
+/// Will consume all characters which return true on [`char::is_whitespace`].
+#[derive(Debug, PartialEq)]
+pub struct Whitespace;
+
+mangez!(
+    Whitespace {
+        [
+            : char { |token: char| token.is_whitespace() }
+        ]
+    }
+);
+
+mod digit;
+pub use digit::Digit;
+
+mod one_or_more;
+pub use one_or_more::OneOrMore;
+
+pub mod chars;
+
+mod parser;
+pub use parser::Parser;

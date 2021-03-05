@@ -1,5 +1,5 @@
 [package]
-name = "manger"
+name = "manger-core"
 version = "0.1.1"
 authors = ["Gijs Burghoorn <me@gburghoorn.com>"]
 edition = "2018"
@@ -9,22 +9,15 @@ repository = "https://github.com/coastalwhite/manger"
 homepage = "https://github.com/coastalwhite/manger"
 license = "MIT"
 description = "A performant, low-level, lightweight and intuitive combinatoric parser library"
-readme = "README.md"
-
-[workspace]
-members = [
-    'packages/manger-core',
-    'packages/manger-macro',
-    'packages/manger-std',
-]
 
 [badges.maintenance]
 status = "actively-developed"
 
 [dependencies]
-manger-core = { version = "0.1.1", path = "packages/manger-core" }
-manger-macro = { version = "0.1.0", path = "packages/manger-macro" }
-manger-std = { version = "0.1.0", path = "packages/manger-std" }
+az = "1.1.0"
+utf8_slice = "^1.0.0"
+either = "1.6.1"
+thiserror = "1.0"
 
 [dev-dependencies]
-cargo-sync-readme = "^1.1.0"
+manger = { version = "0.1.1",  path = "../../" }

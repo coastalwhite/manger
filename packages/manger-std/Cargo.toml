@@ -1,0 +1,10 @@
+[package]
+name = "manger-std"
+version = "0.1.1"
+authors = ["Gijs Burghoorn <me@gburghoorn.com>"]
+edition = "2018"
+
+[dependencies]
+manger-core = { version = "0.1.1", path = "../manger-core" }
+manger-macro = { version = "0.1.0", path = "../manger-macro" }
+utf8_slice = "^1.0.0"
