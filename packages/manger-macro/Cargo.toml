@@ -28,3 +28,7 @@ path = "tests/encased_integer.rs"
 [[test]]
 name = "generics"
 path = "tests/generics.rs"
+
+[[test]]
+name = "options"
+path = "tests/group_options.rs"

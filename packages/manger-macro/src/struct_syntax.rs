@@ -7,14 +7,16 @@ use syn::{
 
 use quote::quote;
 
-use crate::ToTokenstream;
-use crate::specifier::Specifier;
-use crate::sequence_item::SequenceItem;
+use crate::sequence_item::group::options::GroupOption;
 use crate::mapping::Mapping;
+use crate::sequence_item::SequenceItem;
+use crate::specifier::Specifier;
+use crate::ToTokenstream;
 
 #[derive(Debug)]
 pub struct Struct {
     pub specifier: Specifier,
+    pub options: Vec<GroupOption>,
     pub sequence_items: Vec<SequenceItem>,
     pub mapping: Mapping,
 }
@@ -25,6 +27,20 @@ impl Parse for Struct {
 
         let content;
         braced!(content in stream);
+
+        // Parse the options if they are available
+        let options = if stream.peek(syn::token::Brace) {
+            let options_content;
+            braced!(options_content in stream);
+            <Punctuated<
+                crate::sequence_item::group::options::GroupOption,
+                Token![,]
+            >>::parse_terminated(&options_content)?
+                .into_iter()
+                .collect()
+        } else {
+            Vec::new()
+        };
 
         let container_group;
         bracketed!(container_group in content);
@@ -42,6 +58,7 @@ impl Parse for Struct {
 
         Ok(Struct {
             specifier,
+            options,
             sequence_items,
             mapping,
         })
@@ -51,13 +68,16 @@ impl Parse for Struct {
 impl ToTokenstream for Struct {
     fn to_tokenstream(&self) -> proc_macro2::TokenStream {
         let ident = &self.specifier.ident;
-        let (impl_generics, type_generics, where_clause) = &self.specifier.generics.split_for_impl();
+        let (impl_generics, type_generics, where_clause) =
+            &self.specifier.generics.split_for_impl();
 
         let sequence_items: Vec<proc_macro2::TokenStream> = self
             .sequence_items
             .iter()
             .map(|seq_item| seq_item.to_tokenstream())
             .collect();
+
+        let (head, tail) = sequence_items.split_at(1);
 
         let mapping: proc_macro2::TokenStream = self.mapping.to_tokenstream().into();
 
@@ -69,7 +89,18 @@ impl ToTokenstream for Struct {
                     let mut unconsumed = source;
                     let mut offset = 0;
 
-                    #(#sequence_items)*
+                    #(#head)*
+                    #(
+                        let mut index = 0;
+                        for c in unconsumed.chars() {
+                            if !c.is_whitespace() {
+                                break;
+                            }
+                            index += 1;
+                        }
+                        unconsumed = utf8_slice(unconsumed, index);
+                        #tail
+                    )*
 
                     Ok(
                         (

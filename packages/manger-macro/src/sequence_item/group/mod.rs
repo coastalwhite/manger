@@ -6,7 +6,7 @@ use syn::{braced, parenthesized, Token};
 use crate::sequence_item::SequenceItem;
 use crate::ToTokenstream;
 
-mod options;
+pub mod options;
 
 /// A sequence item representing a group of sequence_items
 ///
